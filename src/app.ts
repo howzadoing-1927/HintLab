@@ -70,8 +70,10 @@ export function createApp(): express.Express {
         code = codeRaw;
       }
 
-      // Run the runner WITHOUT cleanup so the temp workdir persists for the agent.
-      const testResults = await runAssignment(assignment, code);
+      // Run the runner WITHOUT cleanup so the temp workdir persists for the
+      // agent. The workdir is the agent's sandbox and lives until the session
+      // ends/TTL, at which point the session cleanup loop removes it.
+      const testResults = await runAssignment(assignment, code, { cleanup: false });
 
       const session = createSession({
         assignmentId: assignment.id,

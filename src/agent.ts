@@ -342,6 +342,10 @@ export async function startSession(sessionId: string): Promise<void> {
         modelId: HINTLAB_MODEL_ID,
         temperature: 0,
         systemPrompt: SYSTEM_PROMPT,
+        // session.workdir is the runner's temp sandbox dir, kept alive for the
+        // agent via runAssignment(..., { cleanup: false }) in app.ts. It is the
+        // agent's whole sandbox and is removed by the session cleanup loop when
+        // the session ends/TTL expires (see sessions.ts deleteSession).
         cwd: session.workdir,
         workspaceRoot: session.workdir,
         enableTools: true,

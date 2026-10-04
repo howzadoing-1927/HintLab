@@ -27,6 +27,8 @@ export interface BuildResult {
   stdout: string;
   stderr: string;
   timedOut: boolean;
+  /** Signal that killed the build process (e.g. "SIGKILL"), or null. */
+  signal: string | null;
 }
 
 export interface TestResult {
@@ -36,6 +38,8 @@ export interface TestResult {
   got: string;
   stderr: string;
   exitCode: number | null;
+  /** Signal that killed the program (e.g. "SIGSEGV"), or null. */
+  signal: string | null;
   timedOut: boolean;
   passed: boolean;
 }
@@ -54,7 +58,13 @@ export interface RunnerOptions {
   runTimeoutMs?: number;
   buildTimeoutMs?: number;
   maxOutputBytes?: number;
-  /** Remove the temp sandbox dir after the run completes. Defaults to false. */
+  /**
+   * Remove the temp sandbox dir after the run completes (success, failure,
+   * timeout, build failure, or exception). Defaults to true. Pass `false`
+   * only when something needs the dir afterwards — the agent session's
+   * workdir is the one such case, and it is removed later by the session
+   * TTL cleanup.
+   */
   cleanup?: boolean;
 }
 

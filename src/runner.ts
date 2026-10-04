@@ -10,6 +10,7 @@ interface SpawnOutcome {
   stdout: string;
   stderr: string;
   exitCode: number | null;
+  signal: string | null;
   timedOut: boolean;
 }
 
@@ -57,6 +58,38 @@ function tokenize(command: string): string[] {
   return tokens;
 }
 
+/**
+ * Minimal environment handed to the student program and the gcc build. Only
+ * PATH (so python3/gcc are still found), HOME (pointed at the run's temp dir),
+ * and LANG are set. The server's process.env is deliberately NOT inherited, so
+ * ClinePass/SDK credentials or any other server env var can never leak into
+ * student code.
+ */
+function minimalEnv(home: string): NodeJS.ProcessEnv {
+  const pathEnv = process.env.PATH ?? "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+  return {
+    PATH: pathEnv,
+    HOME: home,
+    LANG: "C.UTF-8",
+  };
+}
+
+/** Human-readable description for common fatal signals (used in stderr). */
+const SIGNAL_DESCRIPTIONS: Record<string, string> = {
+  SIGSEGV: "segmentation fault",
+  SIGABRT: "aborted",
+  SIGFPE: "floating point exception",
+  SIGILL: "illegal instruction",
+  SIGBUS: "bus error",
+  SIGTRAP: "trace/breakpoint trap",
+  SIGSYS: "bad system call",
+};
+
+function describeSignal(signal: string): string {
+  const desc = SIGNAL_DESCRIPTIONS[signal];
+  return desc ? ` (${desc})` : "";
+}
+
 function killProcessTree(child: ChildProcess): void {
   if (child.pid === undefined) return;
   try {
@@ -79,7 +112,7 @@ function killProcessTree(child: ChildProcess): void {
 function spawnCommand(command: string, config: SpawnConfig): Promise<SpawnOutcome> {
   const tokens = tokenize(command);
   if (tokens.length === 0) {
-    return Promise.resolve({ stdout: "", stderr: "empty command", exitCode: null, timedOut: false });
+    return Promise.resolve({ stdout: "", stderr: "empty command", exitCode: null, signal: null, timedOut: false });
   }
 
   const [cmd, ...args] = tokens;
@@ -88,12 +121,13 @@ function spawnCommand(command: string, config: SpawnConfig): Promise<SpawnOutcom
     let stdout = "";
     let stderr = "";
     let exitCode: number | null = null;
+    let signal: string | null = null;
     let timedOut = false;
     let settled = false;
 
     const child = spawn(cmd, args, {
       cwd: config.cwd,
-      env: process.env,
+      env: minimalEnv(config.cwd),
       stdio: ["pipe", "pipe", "pipe"],
       detached: process.platform !== "win32",
     });
@@ -109,16 +143,27 @@ function spawnCommand(command: string, config: SpawnConfig): Promise<SpawnOutcom
       }
     };
 
+    // Kill the whole process group exactly once, no matter how the run ends
+    // (normal exit, spawn error, timeout, ...). detached:true made the child its
+    // own group leader on POSIX, so this also reaps any grandchildren it forked
+    // (e.g. a `subprocess.Popen(['sleep','31'])` that would otherwise survive).
+    let killed = false;
+    const killGroup = () => {
+      if (killed) return;
+      killed = true;
+      killProcessTree(child);
+    };
+
     const finish = () => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      resolve({ stdout, stderr, exitCode, timedOut });
+      killGroup();
+      resolve({ stdout, stderr, exitCode, signal, timedOut });
     };
 
     const timer = setTimeout(() => {
       timedOut = true;
-      killProcessTree(child);
       finish();
     }, config.timeoutMs);
 
@@ -130,8 +175,14 @@ function spawnCommand(command: string, config: SpawnConfig): Promise<SpawnOutcom
       finish();
     });
 
-    child.once("exit", (code) => {
+    child.once("exit", (code, sig) => {
       exitCode = code;
+      // Our own timeout SIGKILL is not a crash: it is already reported via
+      // `timedOut`, so only record a signal when the program died on its own.
+      if (sig && !timedOut) {
+        signal = sig;
+        stderr += `\n[runner] Program terminated by signal ${sig}${describeSignal(sig)}\n`;
+      }
       finish();
     });
 
@@ -162,90 +213,97 @@ export async function runAssignment(
   const runTimeoutMs = options.runTimeoutMs ?? RUN_TIMEOUT_MS;
   const buildTimeoutMs = options.buildTimeoutMs ?? BUILD_TIMEOUT_MS;
   const maxOutputBytes = options.maxOutputBytes ?? MAX_OUTPUT_BYTES;
+  // Clean up the temp sandbox dir by default (success, failure, timeout, build
+  // failure, or exception). Only the agent session opts out via { cleanup: false }
+  // because its workdir must outlive the run (it is removed later at TTL).
+  const cleanup = options.cleanup ?? true;
 
   const sandboxDir = fs.mkdtempSync(path.join(os.tmpdir(), "hintlab-"));
   const sourceFile = assignment.language === "python" ? "main.py" : "main.c";
 
-  fs.writeFileSync(path.join(sandboxDir, sourceFile), code, "utf8");
-  fs.writeFileSync(
-    path.join(sandboxDir, "tests.json"),
-    JSON.stringify(
-      {
-        assignmentId: assignment.assignmentId,
-        language: assignment.language,
-        statement: assignment.statement,
-        ...(assignment.build ? { build: assignment.build } : {}),
-        run: assignment.run,
-        tests: assignment.tests,
-      },
-      null,
-      2,
-    ),
-    "utf8",
-  );
+  try {
+    fs.writeFileSync(path.join(sandboxDir, sourceFile), code, "utf8");
+    fs.writeFileSync(
+      path.join(sandboxDir, "tests.json"),
+      JSON.stringify(
+        {
+          assignmentId: assignment.assignmentId,
+          language: assignment.language,
+          statement: assignment.statement,
+          ...(assignment.build ? { build: assignment.build } : {}),
+          run: assignment.run,
+          tests: assignment.tests,
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
 
-  let build: BuildResult | null = null;
-  if (assignment.build) {
-    const b = await spawnCommand(assignment.build, {
-      cwd: sandboxDir,
-      timeoutMs: buildTimeoutMs,
-      maxOutputBytes,
-    });
-    build = {
-      ok: !b.timedOut && b.exitCode === 0,
-      stdout: b.stdout,
-      stderr: b.stderr,
-      timedOut: b.timedOut,
-    };
-
-    if (!build.ok) {
-      if (options.cleanup) cleanupSandbox(sandboxDir);
-      return {
-        assignmentId: assignment.id,
-        sandboxDir,
-        build,
-        tests: [],
-        passed: 0,
-        failed: 0,
-        total: 0,
+    let build: BuildResult | null = null;
+    if (assignment.build) {
+      const b = await spawnCommand(assignment.build, {
+        cwd: sandboxDir,
+        timeoutMs: buildTimeoutMs,
+        maxOutputBytes,
+      });
+      build = {
+        ok: !b.timedOut && b.exitCode === 0,
+        stdout: b.stdout,
+        stderr: b.stderr,
+        timedOut: b.timedOut,
+        signal: b.signal,
       };
+
+      if (!build.ok) {
+        return {
+          assignmentId: assignment.id,
+          sandboxDir,
+          build,
+          tests: [],
+          passed: 0,
+          failed: 0,
+          total: 0,
+        };
+      }
     }
-  }
 
-  const tests: TestResult[] = [];
-  for (const test of assignment.tests) {
-    const r = await spawnCommand(assignment.run, {
-      cwd: sandboxDir,
-      input: test.input,
-      timeoutMs: runTimeoutMs,
-      maxOutputBytes,
-    });
-    const got = r.stdout.trim();
-    const passed = !r.timedOut && r.exitCode === 0 && got === test.expected;
-    tests.push({
-      name: test.name,
-      input: test.input,
-      expected: test.expected,
-      got,
-      stderr: r.stderr,
-      exitCode: r.exitCode,
-      timedOut: r.timedOut,
+    const tests: TestResult[] = [];
+    for (const test of assignment.tests) {
+      const r = await spawnCommand(assignment.run, {
+        cwd: sandboxDir,
+        input: test.input,
+        timeoutMs: runTimeoutMs,
+        maxOutputBytes,
+      });
+      const got = r.stdout.trim();
+      const passed = !r.timedOut && r.exitCode === 0 && got === test.expected;
+      tests.push({
+        name: test.name,
+        input: test.input,
+        expected: test.expected,
+        got,
+        stderr: r.stderr,
+        exitCode: r.exitCode,
+        signal: r.signal,
+        timedOut: r.timedOut,
+        passed,
+      });
+    }
+
+    const passed = tests.filter((t) => t.passed).length;
+
+    return {
+      assignmentId: assignment.id,
+      sandboxDir,
+      build,
+      tests,
       passed,
-    });
+      failed: tests.length - passed,
+      total: tests.length,
+    };
+  } finally {
+    if (cleanup) cleanupSandbox(sandboxDir);
   }
-
-  const passed = tests.filter((t) => t.passed).length;
-
-  if (options.cleanup) cleanupSandbox(sandboxDir);
-
-  return {
-    assignmentId: assignment.id,
-    sandboxDir,
-    build,
-    tests,
-    passed,
-    failed: tests.length - passed,
-    total: tests.length,
-  };
 }
 
