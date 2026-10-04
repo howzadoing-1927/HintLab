@@ -1,0 +1,3 @@
+{"assignmentId":"sum-of-list","language":"python","statement":"Read space-separated integers on one line and print their sum.",
+ "run":"python3 main.py",
+ "tests":[{"name":"basic","input":"1 2 3\n","expected":"6"},{"name":"single","input":"7\n","expected":"7"},{"name":"negatives","input":"-4 10 -1\n","expected":"5"},{"name":"first-only-big","input":"100 1\n","expected":"101"}]}
