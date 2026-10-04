@@ -287,7 +287,15 @@ function handleStatus(d) {
 }
 
 function handleError(d) {
-  feedLine("error", "⚠️", d.message || "Something went wrong.");
+  const message = d.message || "Something went wrong.";
+  feedLine("error", "⚠️", message);
+  if (d.code === "auth") {
+    // Show the friendly "not connected" message in the form error area (the
+    // student can retry after authenticating) and un-stick the busy state.
+    showFormError(message);
+    state.agentBusy = false;
+    updateNextButton();
+  }
 }
 
 function handleDone() {

@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "test:runner": "tsx scripts/check-runner.ts",
     "check:agent": "tsx scripts/check-agent.ts",
-    "check:web": "tsx scripts/check-web.ts"
+    "check:web": "tsx scripts/check-web.ts",
+    "check:auth": "tsx scripts/check-auth.ts"
   },
   "dependencies": {
     "@cline/sdk": "^0.0.90",

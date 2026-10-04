@@ -5,6 +5,7 @@ import { z } from "zod";
 import { extractCommands } from "./allowlist";
 import { loadAssignment } from "./assignments";
 import { AGENT_TURN_TIMEOUT_MS, HINTLAB_MODEL_ID, HINTLAB_PROVIDER_ID } from "./config";
+import { AUTH_FAILURE_CODE, AUTH_FAILURE_MESSAGE, detectAuthFailure } from "./authFailure";
 import { categorizeHintReason, checkHint } from "./hintGuard";
 import { runTestsInWorkdir } from "./runner";
 import {
@@ -125,8 +126,9 @@ const RUN_TESTS_DESCRIPTION = [
  * The hardened test runner exposed to the agent. It replaces the SDK's built-in
  * run_commands (which is disabled) so that student code run by the agent goes
  * through the server's own runner — process-group kill, timeouts, and a minimal
- * env with HOME set to the sandbox dir. Student code therefore can never read
- * the server's environment or the credentials in ~/.cline.
+ * env with HOME set to the sandbox dir. Student code therefore cannot read the
+ * server's process environment (only PATH, HOME and LANG are set); note it is
+ * not OS-sandboxed and still runs as the host user.
  */
 const runTestsTool = createTool({
   name: "run_tests",
@@ -227,9 +229,7 @@ function handleCoreEvent(e: {
         emitEvent(session, "done", { reason: ev.reason });
         break;
       case "error":
-        emitEvent(session, "error", {
-          message: ev.error instanceof Error ? ev.error.message : String(ev.error),
-        });
+        handleAgentError(session, ev);
         break;
       default:
         break;
@@ -323,6 +323,28 @@ async function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise
   }
 }
 
+/**
+ * Emit the right error event for a session and end it in the `error` state.
+ * Auth failures are collapsed into one short, secret-free message (logged
+ * once per session with the session id); everything else keeps its existing
+ * friendly handling in the event filter.
+ */
+function handleAgentError(session: Session, err: unknown): void {
+  if (detectAuthFailure(err)) {
+    if (!session.authFailureHandled) {
+      session.authFailureHandled = true;
+      // Exactly one line per failed session, no stack traces or secrets.
+      console.log(`[session ${session.id}] ${AUTH_FAILURE_MESSAGE}`);
+      emitEvent(session, "error", { message: AUTH_FAILURE_MESSAGE, code: AUTH_FAILURE_CODE });
+    }
+    setStatus(session, "error");
+    return;
+  }
+
+  emitEvent(session, "error", { message: err instanceof Error ? err.message : String(err) });
+  setStatus(session, "error");
+}
+
 /** Run the first (level-1) agent turn in the background for a session. */
 export async function startSession(sessionId: string): Promise<void> {
   const session = getSession(sessionId);
@@ -369,8 +391,7 @@ export async function startSession(sessionId: string): Promise<void> {
     const finishReason = (result.result as { finishReason?: string } | undefined)?.finishReason;
     emitEvent(session, "status", { message: "initial agent turn finished", finishReason });
   } catch (err) {
-    emitEvent(session, "error", { message: err instanceof Error ? err.message : String(err) });
-    setStatus(session, "error");
+    handleAgentError(session, err);
   } finally {
     session.busy = false;
     if (session.status !== "error") {
@@ -404,8 +425,7 @@ export async function nextHint(sessionId: string): Promise<{ level: number; stat
     const finishReason = (result as { finishReason?: string } | undefined)?.finishReason;
     emitEvent(session, "status", { message: `level ${nextLevel} agent turn finished`, finishReason });
   } catch (err) {
-    emitEvent(session, "error", { message: err instanceof Error ? err.message : String(err) });
-    setStatus(session, "error");
+    handleAgentError(session, err);
   } finally {
     session.busy = false;
     if (session.status !== "error") {

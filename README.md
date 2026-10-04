@@ -46,7 +46,7 @@ xcode-select --install
 
 # Node.js 22+ (Homebrew)
 brew install node@22
-brew link node@22
+brew link node@22 --force   # the force flag may be needed if node is already linked
 node --version
 ```
 
@@ -70,11 +70,15 @@ sudo dnf install -y git python3 gcc procps-ng   # procps-ng provides pgrep
 # Node.js 22+ via nvm or NodeSource, as above.
 ```
 
-## 2. Cline CLI + ClinePass (provider credentials)
+## 2. Cline CLI credentials (ClinePass or API key)
 
 HintLab does **not** ship or read an API key. In local backend mode the SDK resolves
-credentials itself from the Cline CLI's config directory (`~/.cline`), so the only setup
-step is to install the CLI and authenticate it with ClinePass once.
+credentials itself from the Cline CLI's config directory (`~/.cline` by default), so the
+setup step is to install the CLI and authenticate it. There are two ways to authenticate:
+
+- **ClinePass** (the default, used for the built-in `cline-pass` provider), or
+- an **API key** for a provider such as Anthropic or OpenRouter (for judges who do not have
+  ClinePass).
 
 1. Install the CLI (installs the `cline` binary):
 
@@ -83,28 +87,57 @@ step is to install the CLI and authenticate it with ClinePass once.
    cline --version      # verified on 3.0.68
    ```
 
-2. Authenticate with ClinePass. `cline auth` takes a positional provider shorthand and
-   flags (`-p/--provider`, `-k/--apikey`, `-m/--modelid`, `-b/--baseurl`):
+2. Run `cline auth --help` to see the exact flags. As of CLI `3.0.68` they are:
 
    ```sh
    cline auth --help
    # Usage: cline auth [options] [provider]
-   #   provider              Provider id (positional shorthand for -p)
-   #   -p, --provider <id>   Provider ID
-   #   -k, --apikey <key>    API key
-   #   -m, --modelid <id>    Model ID
-   #   -b, --baseurl <url>   Base URL
+   #   provider                       Provider id (positional shorthand for -p)
+   #   -p, --provider <id>            Provider ID
+   #   -k, --apikey <key>             API key
+   #   -m, --modelid <id>             Model ID
+   #   -b, --baseurl <url>            Base URL
+   #   --azure-api-version <version>  Azure API version
+   #   --config <dir>                 configuration directory
+   #   -c, --cwd <path>               Working directory
+   #   --data-dir <dir>               Use isolated local state at <dir> instead of ~/.cline
+   #   -v, --verbose                  Show verbose output
+   #   -h, --help                     display help for command
+   ```
 
+   **Path A — ClinePass (OAuth).** Run the login flow (follow the prompts):
+
+   ```sh
    cline auth cline-pass -m cline-pass/deepseek-v4-pro
    # (equivalent: cline auth -p cline-pass -m cline-pass/deepseek-v4-pro)
    ```
 
-   This runs the ClinePass OAuth login flow (follow the prompts). On success the CLI
-   writes the ClinePass credentials to:
+   On success the CLI writes the ClinePass credentials to:
 
    ```
    ~/.cline/data/settings/providers.json   ->   providers["cline-pass"].settings.auth
        { accessToken, refreshToken, expiresAt, accountId, metadata }
+   ```
+
+   **Path B — API key.** Authenticate a provider with `-k/--apikey` (a placeholder key is
+   shown below — use your real one). Anthropic, for example, with the real model id
+   `claude-sonnet-4-5`:
+
+   ```sh
+   cline auth -p anthropic -k sk-ant-REPLACE_WITH_YOUR_KEY -m claude-sonnet-4-5
+   ```
+
+   or an OpenAI-compatible provider such as OpenRouter:
+
+   ```sh
+   cline auth -p openrouter -k sk-or-v1-REPLACE_WITH_YOUR_KEY -m openrouter/auto
+   ```
+
+   API-key credentials land in the same file, keyed by provider id, under `settings.apiKey`
+   (never printed back to you by HintLab):
+
+   ```
+   ~/.cline/data/settings/providers.json   ->   providers["anthropic"].settings.apiKey
    ```
 
    Confirm with `cline config`.
@@ -113,21 +146,30 @@ step is to install the CLI and authenticate it with ClinePass once.
    `HINTLAB_PROVIDER_ID=cline-pass` and `HINTLAB_MODEL_ID=cline-pass/deepseek-v4-pro`.
    `src/agent.ts` creates `ClineCore.create({ clientName: "hintlab", backendMode: "local" })`
    and passes those ids (and **no** API key) to `cline.start(...)`. In local mode the SDK's
-   runtime host reads the provider's OAuth token from
-   `~/.cline/data/settings/providers.json`, refreshes it if expired, and injects it for the
-   request. Treat `~/.cline` as read-only: the server never writes to it and never logs any
-   token (it only ever prints provider/model names).
+   runtime host reads the provider's credentials from
+   `~/.cline/data/settings/providers.json` (OAuth token or API key), refreshes the OAuth
+   token if expired, and injects it for the request. Treat `~/.cline` as read-only: the
+   server never writes to it and never logs any token or key.
 
-4. **Using a different provider:** the code supports any provider the CLI has credentials
-   for, via env overrides. Authenticate that provider with the CLI first (so its
-   credentials land in `~/.cline`), then run:
+4. **Using a different provider:** the code accepts any provider id and model id that the
+   CLI has credentials for — it passes `HINTLAB_PROVIDER_ID` and `HINTLAB_MODEL_ID` straight
+   to the SDK. Point HintLab at the provider you authenticated above with the matching
+   values, then confirm a real model call works:
 
    ```sh
    HINTLAB_PROVIDER_ID=anthropic HINTLAB_MODEL_ID=claude-sonnet-4-5 npm start
+   # …then, in another shell, with the server running:
+   npm run check:agent     # makes a real model call on the chosen provider/model
    ```
 
-   There is no `API_KEY` env var and no `config.apiKey`; the only supported credential
-   source is `~/.cline`.
+   (For the OpenRouter example, use `HINTLAB_PROVIDER_ID=openrouter
+   HINTLAB_MODEL_ID=openrouter/auto`.)
+
+   There is **no** `API_KEY` environment variable and no `config.apiKey`: the only
+   credential source is `~/.cline` (the providers file written by `cline auth`). The SDK
+   also honours the `CLINE_DIR` / `CLINE_DATA_DIR` environment variables to relocate its
+   config/data directory (HintLab uses them in `check:auth` to force an unauthenticated
+   provider without touching `~/.cline`).
 
 ## 3. Environment variables
 
@@ -147,9 +189,12 @@ safe default.
 | `SESSION_TTL_MS` | `1800000` (30 min) | Idle session lifetime before cleanup |
 | `SESSION_CLEANUP_INTERVAL_MS` | `60000` (1 min) | How often the cleanup loop runs |
 | `HEARTBEAT_MS` | `15000` | SSE keep-alive heartbeat interval |
+| `CLINE_DIR` | (SDK: `$HOME/.cline`) | Relocates the Cline CLI config dir (used by `check:auth` to force an empty one) |
+| `CLINE_DATA_DIR` | (SDK: `$CLINE_DIR/data`) | Relocates the Cline CLI data dir (providers.json lives under it) |
 
 (Internally the runner also reads `process.env.PATH` to build the minimal environment it
-hands to student code — that's the OS `PATH`, not an app setting.)
+hands to student code — that's the OS `PATH`, not an app setting. `CLINE_DIR` /
+`CLINE_DATA_DIR` are honoured by the Cline SDK itself, not by HintLab code.)
 
 ## 4. Install and run
 
@@ -161,8 +206,11 @@ npm start        # run once (tsx src/server.ts)
 npm run dev      # watch mode (tsx watch src/server.ts)
 ```
 
-Open **http://localhost:3000/** (override the port with `PORT=3200 npm start`). The web
+Open **http://localhost:3000/** (override the port with `PORT=3300 npm start`). The web
 UI is static (plain HTML/CSS/vanilla JS, no build step) and is served from `web/`.
+
+> The check scripts (`check:agent`, `check:web`, `check:auth`) hard-code port **3200**, so
+> don't run the server on 3200 while running them.
 
 ### Demo walkthrough (sum-of-list)
 
@@ -191,6 +239,7 @@ UI is static (plain HTML/CSS/vanilla JS, no build step) and is served from `web/
 | `npm run test:runner` | `tsx scripts/check-runner.ts` | Sandboxed runner checks — **no model call** |
 | `npm run check:agent` | `tsx scripts/check-agent.ts` | Allow-list + hint-guard unit tests + a **real model** e2e on `sum-of-list` |
 | `npm run check:web` | `tsx scripts/check-web.ts` | Static UI + SSE contract + a **real model** session |
+| `npm run check:auth` | `tsx scripts/check-auth.ts` | Proves the unauthenticated-tutor error path (no model call, no `~/.cline`) |
 
 - **`npm run typecheck`** — `tsc --noEmit` across `src/` and `scripts/`. No network, no model.
   Pass = exit 0 with no output. A few seconds.
@@ -217,9 +266,17 @@ UI is static (plain HTML/CSS/vanilla JS, no build step) and is served from `web/
   the SSE stream until the level-1 hint (or a timeout), and asserts the event types contain
   no `agent_text`/`reasoning`. **Makes real model calls.** Stops the server by PID; leaves
   nothing running.
+- **`npm run check:auth`** — starts the server on **`PORT=3200`** with `HINTLAB_PROVIDER_ID=anthropic`,
+  `HINTLAB_MODEL_ID=claude-sonnet-4-5`, and `CLINE_DIR`/`CLINE_DATA_DIR` pointed at an empty
+  temp dir (so the SDK sees no credentials), posts a `sum-of-list` session, reads the SSE
+  stream, and asserts an `error` event with `code: "auth"` and the exact message
+  `Tutor not connected: run \`cline auth\` (see README)` arrives, that the server log prints
+  that line once for the session, and that no hint was produced. **No model call** and it
+  never reads or writes `~/.cline`. Stops the server by PID.
 
 > The checks hard-code port **3200** and start/stop their own server; they never touch
-> `PORT=3000`. `typecheck` and `test:runner` are the only checks that need no ClinePass login.
+> `PORT=3000`, and you should not run the server on 3200 while running them. `typecheck`,
+> `test:runner` and `check:auth` are the checks that need no ClinePass login.
 
 ## 6. API reference
 
@@ -268,13 +325,38 @@ and reasoning) is dropped by `src/eventFilter.ts`.
 | `hint_rejected` | `{ level, reason }` with `reason` ∈ `"wrong level" \| "empty hint" \| "contained code"` (never the rejected text) |
 | `hint_status` | whitelisted (reserved); the server currently emits `hint_rejected` instead |
 | `status` | `{ status }` — `created`, `running`, `idle`, `complete`, `error` |
-| `error` | `{ message }` — a short friendly line, never a stack trace or SDK text |
+| `error` | `{ message }`, plus `{ message, code: "auth" }` when the tutor model is not authenticated (`message` is `Tutor not connected: run \`cline auth\` (see README)`) — a short friendly line, never a stack trace or SDK text |
 | `done` | `{ reason }` |
 
 **Filtering:** raw agent events (`agent_text`, `reasoning`, unguarded tool output) are
 recorded server-side for debugging but never streamed; `filterEvent` applies the allow-list
 and sanitisation to both live events and the replayed history, so late joiners get the same
 contract.
+
+### curl examples (server on port 3300)
+
+Create a `sum-of-list` session using the starter code (omit `code`), capture the returned
+`sessionId`, then follow the SSE stream:
+
+```sh
+BASE=http://localhost:3300
+SID=$(curl -s -X POST "$BASE/api/session" \
+  -H 'content-type: application/json' \
+  -d '{"assignmentId":"sum-of-list"}' | python3 -c 'import sys,json; print(json.load(sys.stdin)["sessionId"])')
+echo "session: $SID"
+curl -N -s "$BASE/api/session/$SID/stream"
+```
+
+(The `-N` keeps `curl` from buffering the SSE lines; press `Ctrl-C` to stop following.)
+The stream starts with the sanitised `test_results` event, then the `tool_call`/`tool_result`
+events as the tutor reads files and re-runs tests, and finally a `hint` event.
+
+Ask for the next hint (level 2, then 3):
+
+```sh
+curl -s -X POST "$BASE/api/session/$SID/next-hint"
+# → { "level": 2, "status": "idle" }   (the hint itself arrives over the SSE stream)
+```
 
 ## 7. Architecture
 
@@ -288,7 +370,7 @@ contract.
    │     fresh temp dir os.tmpdir()/hintlab-<uuid>
    │     writes main.py/main.c + tests.json + input-<name>.txt
    │     build (gcc) / run (python3|./main) with per-test timeout,
-   │     process-group kill, minimal env (PATH, HOME=sandbox, LANG)
+   │     process-group kill, minimal env (PATH, HOME=run temp dir, LANG)
    │
    ├─ startSession / nextHint ──► ClineCore agent (src/agent.ts)
    │     ClineCore.create({ clientName:"hintlab", backendMode:"local" })   (once, lazy)
@@ -334,11 +416,14 @@ contract.
   code beyond a short identifier, or any line that looks like source code (control flow,
   function calls, assignments, casts, indexing/slicing, comparisons, trailing semicolons).
   A rejected hint becomes a tool error so the model rephrases without code.
-- **Sandboxed runner** (`src/runner.ts`): a fresh temp dir per run, per-test timeouts,
-  `detached:true` + process-group `SIGKILL` to reap child processes, a minimal env (`PATH`,
-  `HOME`=sandbox, `LANG`) so student code cannot see server env or `~/.cline`, signal
-  reporting (`SIGSEGV`, `SIGABRT`, …), and cleanup of the temp dir (except the agent's
-  workdir, which is removed later at TTL).
+- **Sandboxed runner** (`src/runner.ts`): a fresh temp dir per run, per-test/build timeouts,
+  `detached:true` + process-group `SIGKILL` to reap child processes, an output cap
+  (`MAX_OUTPUT_BYTES`), and a minimal environment — only `PATH`, `HOME` (set to the run's
+  temp dir) and `LANG` are set, so the server's `process.env` is not inherited. **It is not
+  OS-sandboxed yet:** student code still runs as the host user and could read any file that
+  user can read (including `~/.cline`); the temp dir is not a security boundary. Signal
+  reporting (`SIGSEGV`, `SIGABRT`, …) and cleanup of the temp dir are included (except the
+  agent's workdir, which is removed later at TTL).
 
 ### SDK quirks worth knowing
 1. **Node 22+** — the SDK and `package.json` `engines` require it.
@@ -391,12 +476,16 @@ fresh per session.
   `gcc --version`, `python3 --version`. macOS: `xcode-select --install`. Debian/Ubuntu:
   `sudo apt install -y build-essential python3`. Fedora: `sudo dnf install -y gcc python3`.
 - **`EADDRINUSE` / "port already in use"** — another process holds the port. Use
-  `PORT=3200 npm start`, or find it: `lsof -i :3000` (macOS) / `ss -ltnp` (Linux), then
-  `kill <pid>`. The bundled checks use `PORT=3200` and manage their own server.
+  `PORT=3300 npm start`, or find it: `lsof -i :3000` (macOS) / `ss -ltnp` (Linux), then
+  `kill <pid>`. The bundled checks (`check:agent`, `check:web`, `check:auth`) use `PORT=3200`
+  and manage their own server, so don't run the server on 3200 while running them.
 - **"Tutor timed out" / no hint appears** — a model call was slow or ClinePass expired. Check
   the feed and server log. The per-turn timeout is `AGENT_TURN_TIMEOUT_MS` (default 5 min).
-- **ClinePass not logged in / expired** — `cline config` shows the current provider; re-run
-  `cline auth cline-pass`. Without valid credentials the agent turns end in an `error` event.
+- **ClinePass / API key missing, invalid or expired** — `cline config` shows the current
+  provider; re-run `cline auth` (ClinePass OAuth, or an API-key provider — see §2). Without
+  valid credentials the agent turn ends in an `error` event and the server prints
+  `Tutor not connected: run \`cline auth\` (see README)`. You can prove this path with
+  `npm run check:auth`.
 - **`cline: command not found`** — the CLI isn't on PATH; run `npm install -g cline` and make
   sure npm's global bin (e.g. `~/.npm-global/bin`) is on `PATH`.
 - **A hint is rejected and the tutor rephrases** — normal: the model proposed a code-bearing
@@ -405,7 +494,7 @@ fresh per session.
 ## 10. Project layout
 
 ```
-HintLab/
+hintlab/
 ├── README.md
 ├── PLAN.md                  # build plan (aspirational; the code is the source of truth)
 ├── package.json             # deps + scripts; engines.node >= 22
@@ -423,6 +512,7 @@ HintLab/
 │   ├── assignments.ts       # discover/load/validate tests.json
 │   ├── runner.ts            # sandboxed build+run+compare (Python & C)
 │   ├── agent.ts             # ClineCore agent (policies, allow-list, give_hint, run_tests)
+│   ├── authFailure.ts       # auth-failure detector + the shared "not connected" message
 │   ├── allowlist.ts         # run_commands allow-list
 │   ├── hintGuard.ts         # server-side hint guard
 │   ├── eventFilter.ts       # SSE allow-list + sanitisation
@@ -431,20 +521,29 @@ HintLab/
 ├── scripts/
 │   ├── check-runner.ts      # sandboxed runner checks (no model)
 │   ├── check-agent.ts       # allow-list/hint-guard units + real-model e2e
-│   └── check-web.ts         # static UI + SSE contract + real-model session
+│   ├── check-web.ts         # static UI + SSE contract + real-model session
+│   └── check-auth.ts        # unauthenticated-tutor error path (no model, no ~/.cline)
 ├── web/
 │   ├── index.html
 │   ├── style.css
 │   └── app.js               # vanilla JS UI (EventSource SSE client)
-└── cline-proof/             # prompts + session logs + test fixtures (see below)
+└── cline-proof/
+    ├── prompts/             # the build prompts: 00-plan, 00b-write-plan, 01-server-runner,
+    │                        #   02-agent, 02c-runner-hardening, 03-web-ui, 03-web-ui.retry,
+    │                        #   03r-web-ui-resume, 04-readme, 05-readme-auth-fixes
+    ├── sessions/            # full Cline session logs (json/output/timing) per prompt step
+    ├── screens/             # UI screenshots + a sample server log
+    ├── tests/               # step-1 test notes
+    └── reference/fixtures/  # the three sample programs (prepared before the sprint)
 ```
 
 ## 11. How this was built
 
 All application code was written by the **Cline CLI** from the prompts in
 `cline-proof/prompts/`, with the full session logs in `cline-proof/sessions/` (and in the
-Cline session history). The git commits follow the prompt steps (`00-plan`,
-`01-server-runner`, `02-agent`, `02c-runner-hardening`, `03-web-ui`).
+Cline session history). The git commits follow the prompt steps (`00-plan`, `00b-write-plan`,
+`01-server-runner`, `02-agent`, `02c-runner-hardening`, `03-web-ui`, `03-web-ui.retry`,
+`03r-web-ui-resume`, `04-readme`, `05-readme-auth-fixes`).
 
 ## 12. Disclosure
 

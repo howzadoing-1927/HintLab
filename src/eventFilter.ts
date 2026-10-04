@@ -13,6 +13,7 @@
  */
 
 import { extractCommands } from "./allowlist";
+import { AUTH_FAILURE_CODE, AUTH_FAILURE_MESSAGE } from "./authFailure";
 
 /** Event types that may ever be forwarded to a client. */
 const ALLOWED_EVENT_TYPES: ReadonlySet<string> = new Set([
@@ -233,7 +234,9 @@ function filterStatus(data: unknown): ClientEvent | null {
 
 /** Turn a raw error into a short human line — never a stack trace / SDK text. */
 function friendlyError(data: unknown): string {
-  const raw = asString(asRecord(data).message);
+  const d = asRecord(data);
+  if (d.code === AUTH_FAILURE_CODE) return AUTH_FAILURE_MESSAGE;
+  const raw = asString(d.message);
   if (/timed?\s*out|timeout|ETIMEDOUT/i.test(raw)) return "Tutor timed out, try again";
   if (/allow-?list|forbidden token/i.test(raw)) return "Command blocked by allow-list";
   if (/hint|rephrase/i.test(raw)) return "Hint blocked, asking the tutor to rephrase";
@@ -264,8 +267,12 @@ export function filterEvent(rawName: string, rawData: unknown): ClientEvent | nu
       return filterHintRejected(rawData);
     case "status":
       return filterStatus(rawData);
-    case "error":
-      return { name: "error", data: { message: friendlyError(rawData) } };
+    case "error": {
+      const d = asRecord(rawData);
+      const message = friendlyError(rawData);
+      const code = d.code === AUTH_FAILURE_CODE ? AUTH_FAILURE_CODE : undefined;
+      return { name: "error", data: code ? { message, code } : { message } };
+    }
     case "done": {
       const d = asRecord(rawData);
       return { name: "done", data: { reason: asString(d.reason) || "done" } };

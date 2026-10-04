@@ -103,6 +103,8 @@ export interface Session {
   currentHintLevel: number;
   /** The SDK session id (equals this.id since we pass config.sessionId). */
   agentSessionId?: string;
+  /** Set once an auth failure has been logged/emitted for this session (dedupe). */
+  authFailureHandled?: boolean;
   sseClients: Set<Response>;
   createdAt: number;
   lastActiveAt: number;
