@@ -1,193 +1,458 @@
 # HintLab
 
-A debugging tutor for programming labs. A student pastes code and picks an
-assignment; the server runs the code against the assignment's test cases in a
-sandbox, then a Cline‑SDK agent diagnoses the failure and delivers **tiered
-hints** (level 1 nudge → level 2 where to look → level 3 concept). It **never**
-writes or reveals the fix.
+HintLab is a debugging tutor for programming labs. A student picks an assignment (or
+pastes their own program), the server runs the code against the assignment's test cases
+in a sandboxed temporary directory, and then a Cline-SDK agent diagnoses the failures
+and delivers **tiered hints** — level 1 (a conceptual nudge), level 2 (where to look),
+level 3 (the underlying concept) — streamed live to the browser. It is an Express +
+TypeScript server (ESM, run via `tsx`), a vanilla-JS web UI (no build step), and an agent
+built on `@cline/sdk`'s `ClineCore`.
 
-This is **Step 04**: the full web UI, plus the server-side fixes from the Step 02
-review — an explicit SSE event allow-list (no unguarded model output reaches the
-browser), friendly errors, a hardened `run_tests` tool that replaces the host
-`run_commands` shell, and a stricter allow-list/hint guard.
+**Safety promise:** the tutor only diagnoses and hints. It **never** writes or reveals
+the fix. File-editing and network tools are disabled at the SDK policy level, the host
+shell command tool is replaced by a hardened `run_tests` tool and gated by a strict
+allow-list, and every hint is checked by a server-side guard before it reaches the
+student. Model free text and reasoning are filtered out on the server, so only a small
+allow-list of sanitised events ever reaches the browser.
 
-## Requirements
+## 1. Prerequisites
 
-- Node.js 22+ (verified on Node 24)
-- Python 3 (`python3`) on PATH
-- `gcc` on PATH (for the C assignment)
-- A Cline CLI installation already authenticated with ClinePass (see
-  [Agent credentials](#agent-credentials))
+| Tool | Version | Why |
+|------|---------|-----|
+| Node.js | **22 or newer** (the Cline SDK and `package.json` `engines` both require `>=22`) | runtime + SDK |
+| npm | bundled with Node | install |
+| Python 3 | `python3` on PATH | runs the Python assignments and `test:runner` |
+| C compiler | `gcc` (on macOS the `gcc`/`cc` shim from Xcode Command Line Tools — i.e. Apple clang — works) | compiles the C assignment |
+| git | any recent | clone |
+| Cline CLI (`cline`) | latest (verified on `3.0.68`) | only for real model calls (`check:agent`, `check:web`, and actually using the tutor) |
+| `pgrep` | any | used by `npm run test:runner` to assert process-group cleanup (built in on macOS; `procps` on Linux) |
 
-## Install
+Check what you have:
 
 ```sh
+node --version      # must be v22+ (verified v24.16.0)
+npm --version
+python3 --version
+gcc --version        # macOS: Apple clang …; Linux: gcc (…)
+git --version
+cline --version     # optional until you run the agent
+```
+
+### macOS
+
+```sh
+# Command Line Tools: provides git, python3, and the clang gcc/cc shim
+xcode-select --install
+
+# Node.js 22+ (Homebrew)
+brew install node@22
+brew link node@22
+node --version
+```
+
+(Any Node ≥ 22 already installed via nvm or another method is fine too.)
+
+### Linux — Debian / Ubuntu
+
+```sh
+sudo apt update
+sudo apt install -y git python3 build-essential procps   # gcc, make, pgrep
+# Node.js 22+: the distro's `nodejs` may be older than 22, so prefer nvm or NodeSource.
+#   nvm:        nvm install 22 && nvm use 22
+#   NodeSource: https://github.com/nodesource/distributions
+node --version   # must be v22+
+```
+
+### Linux — Fedora (dnf)
+
+```sh
+sudo dnf install -y git python3 gcc procps-ng   # procps-ng provides pgrep
+# Node.js 22+ via nvm or NodeSource, as above.
+```
+
+## 2. Cline CLI + ClinePass (provider credentials)
+
+HintLab does **not** ship or read an API key. In local backend mode the SDK resolves
+credentials itself from the Cline CLI's config directory (`~/.cline`), so the only setup
+step is to install the CLI and authenticate it with ClinePass once.
+
+1. Install the CLI (installs the `cline` binary):
+
+   ```sh
+   npm install -g cline
+   cline --version      # verified on 3.0.68
+   ```
+
+2. Authenticate with ClinePass. `cline auth` takes a positional provider shorthand and
+   flags (`-p/--provider`, `-k/--apikey`, `-m/--modelid`, `-b/--baseurl`):
+
+   ```sh
+   cline auth --help
+   # Usage: cline auth [options] [provider]
+   #   provider              Provider id (positional shorthand for -p)
+   #   -p, --provider <id>   Provider ID
+   #   -k, --apikey <key>    API key
+   #   -m, --modelid <id>    Model ID
+   #   -b, --baseurl <url>   Base URL
+
+   cline auth cline-pass -m cline-pass/deepseek-v4-pro
+   # (equivalent: cline auth -p cline-pass -m cline-pass/deepseek-v4-pro)
+   ```
+
+   This runs the ClinePass OAuth login flow (follow the prompts). On success the CLI
+   writes the ClinePass credentials to:
+
+   ```
+   ~/.cline/data/settings/providers.json   ->   providers["cline-pass"].settings.auth
+       { accessToken, refreshToken, expiresAt, accountId, metadata }
+   ```
+
+   Confirm with `cline config`.
+
+3. **How the server picks them up:** `src/config.ts` defaults
+   `HINTLAB_PROVIDER_ID=cline-pass` and `HINTLAB_MODEL_ID=cline-pass/deepseek-v4-pro`.
+   `src/agent.ts` creates `ClineCore.create({ clientName: "hintlab", backendMode: "local" })`
+   and passes those ids (and **no** API key) to `cline.start(...)`. In local mode the SDK's
+   runtime host reads the provider's OAuth token from
+   `~/.cline/data/settings/providers.json`, refreshes it if expired, and injects it for the
+   request. Treat `~/.cline` as read-only: the server never writes to it and never logs any
+   token (it only ever prints provider/model names).
+
+4. **Using a different provider:** the code supports any provider the CLI has credentials
+   for, via env overrides. Authenticate that provider with the CLI first (so its
+   credentials land in `~/.cline`), then run:
+
+   ```sh
+   HINTLAB_PROVIDER_ID=anthropic HINTLAB_MODEL_ID=claude-sonnet-4-5 npm start
+   ```
+
+   There is no `API_KEY` env var and no `config.apiKey`; the only supported credential
+   source is `~/.cline`.
+
+## 3. Environment variables
+
+There is **no `.env` file and no dotenv loading** — `src/config.ts` reads `process.env`
+directly. Set them inline (`VAR=value npm start`) or export them. Every variable has a
+safe default.
+
+| Variable | Default | Meaning |
+|----------|---------|---------|
+| `PORT` | `3000` | HTTP port the server listens on |
+| `RUN_TIMEOUT_MS` | `5000` | Per-test run timeout (ms) |
+| `BUILD_TIMEOUT_MS` | `15000` | Build (`gcc`) timeout (ms) |
+| `MAX_OUTPUT_BYTES` | `1048576` (1 MiB) | Max captured stdout/stderr bytes per process |
+| `HINTLAB_PROVIDER_ID` | `cline-pass` | Provider id passed to `ClineCore` |
+| `HINTLAB_MODEL_ID` | `cline-pass/deepseek-v4-pro` | Model id passed to `ClineCore` |
+| `AGENT_TURN_TIMEOUT_MS` | `300000` (5 min) | Max time an agent turn (`start`/`send`) may run |
+| `SESSION_TTL_MS` | `1800000` (30 min) | Idle session lifetime before cleanup |
+| `SESSION_CLEANUP_INTERVAL_MS` | `60000` (1 min) | How often the cleanup loop runs |
+| `HEARTBEAT_MS` | `15000` | SSE keep-alive heartbeat interval |
+
+(Internally the runner also reads `process.env.PATH` to build the minimal environment it
+hands to student code — that's the OS `PATH`, not an app setting.)
+
+## 4. Install and run
+
+```sh
+git clone <repo-url> hintlab && cd hintlab
 npm install
-```
 
-## Agent credentials (picked up from `~/.cline`)
-
-The agent uses the same ClinePass provider/model as the Cline CLI:
-
-- provider id: `cline-pass`
-- model id: `cline-pass/deepseek-v4-pro`
-
-The SDK does **not** need an API key in the repo or in env vars. In local
-backend mode (`backendMode: "local"`), `ClineCore.start` resolves credentials
-itself from the Cline CLI's config/data directory:
-
-- `~/.cline/data/settings/providers.json` → the `cline-pass` entry, whose
-  `settings.auth` holds the OAuth `accessToken`/`refreshToken`. When
-  `config.apiKey` is omitted, the SDK's local runtime host resolves the
-  provider's OAuth token from this file (refreshing it if expired) and injects
-  it for the request.
-
-Treat `~/.cline` as read-only: the server never writes to it, and never logs
-any token/secret (it only ever prints provider/model names). You can override
-the provider/model via env vars:
-
-```sh
-HINTLAB_PROVIDER_ID=cline-pass HINTLAB_MODEL_ID=cline-pass/deepseek-v4-pro npm start
-```
-
-## Start the server
-
-```sh
-npm run dev      # watch mode
 npm start        # run once (tsx src/server.ts)
+npm run dev      # watch mode (tsx watch src/server.ts)
 ```
 
-The server listens on `http://localhost:3000` by default. Override with `PORT`:
+Open **http://localhost:3000/** (override the port with `PORT=3200 npm start`). The web
+UI is static (plain HTML/CSS/vanilla JS, no build step) and is served from `web/`.
 
-```sh
-PORT=3200 npm start
+### Demo walkthrough (sum-of-list)
+
+1. Pick **`sum-of-list`** from the drop-down. The statement ("Read space-separated
+   integers on one line and print their sum.") appears and the buggy starter is preloaded
+   into the editor (it loops `for i in range(1, len(nums))`, skipping the first number).
+2. Click **Run & get hint**. The server runs the code in a fresh temp dir and the
+   **Test results** table appears — all 4 tests **FAIL** (`basic` got `5`, `single` got
+   `0`, `negatives` got `9`, `first-only-big` got `1`).
+3. The **Tutor activity** feed streams live as the agent reads the files (`read_files`)
+   and re-runs the tests (`run_tests`).
+4. A **Level 1: nudge** hint card appears (the level-1 agent turn starts automatically).
+5. Press **Next hint** → **Level 2: where to look**, then **Next hint** again →
+   **Level 3: the concept**. The button disables while the tutor is busy, and after
+   level 3 the status shows **All hints given**.
+6. At no point does the tutor write or show corrected code — you only ever see prose hints.
+
+## 5. npm scripts and checks
+
+| Script | Command | What it does |
+|--------|---------|--------------|
+| `npm start` | `tsx src/server.ts` | Run the server once |
+| `npm run dev` | `tsx watch src/server.ts` | Run in watch mode (restarts on change) |
+| `npm run build` | `tsc` | Type-check and emit JS to `dist/` (per `tsconfig.json`) |
+| `npm run typecheck` | `tsc --noEmit` | Type-check only, no output |
+| `npm run test:runner` | `tsx scripts/check-runner.ts` | Sandboxed runner checks — **no model call** |
+| `npm run check:agent` | `tsx scripts/check-agent.ts` | Allow-list + hint-guard unit tests + a **real model** e2e on `sum-of-list` |
+| `npm run check:web` | `tsx scripts/check-web.ts` | Static UI + SSE contract + a **real model** session |
+
+- **`npm run typecheck`** — `tsc --noEmit` across `src/` and `scripts/`. No network, no model.
+  Pass = exit 0 with no output. A few seconds.
+- **`npm run test:runner`** — runs the sandboxed runner against all three buggy starters and
+  asserts the exact pass/fail of every test (sum-of-list 0/4, is-palindrome 2/4,
+  average-marks 1/3), plus a correct solution for each assignment, an infinite-loop program
+  (must time out), a C compile error (must report a build failure), a segfault (must report
+  `SIGSEGV`), process-group kill (no stray `sleep` left behind, checked with `pgrep`),
+  minimal-env (server env does not leak), and temp-dir cleanup. **No model call.** A few
+  seconds. Pass = `ALL CHECKS PASSED`, exit 0.
+- **`npm run check:agent`** — first unit-tests the run_commands allow-list (including
+  `$`-expansion and pipe injection) and the hint guard; then it starts a server on
+  **`PORT=3200`**, posts a `sum-of-list` session, reads the SSE stream, and requests hints
+  at levels 2 and 3. It asserts exactly one accepted hint per level, that no hint contains
+  code, that **no `agent_text`/`reasoning` and no rejected-hint text reach SSE**, that
+  `run_commands` was never executed or approved, that `run_tests` was used (or results
+  otherwise reported), and that no edit/write tool ran. **Makes real model calls** (needs the
+  ClinePass login above). Overall timeout 8 minutes; prints the hints verbatim, the distinct
+  SSE event types, and the approval decisions; exits non-zero on failure. Leaves no server
+  running.
+- **`npm run check:web`** — starts the server on **`PORT=3200`**, fetches `/` (asserts the
+  page title/tagline and that `/app.js` + `/style.css` return 200), fetches
+  `/api/assignments`, starts one real session on `is-palindrome` (or `average-marks`), reads
+  the SSE stream until the level-1 hint (or a timeout), and asserts the event types contain
+  no `agent_text`/`reasoning`. **Makes real model calls.** Stops the server by PID; leaves
+  nothing running.
+
+> The checks hard-code port **3200** and start/stop their own server; they never touch
+> `PORT=3000`. `typecheck` and `test:runner` are the only checks that need no ClinePass login.
+
+## 6. API reference
+
+Base URL `http://localhost:3000` (or your `PORT`).
+
+### `GET /api/health`
+- `200` → `{ "status": "ok" }`
+
+### `GET /api/assignments`
+- `200` → array of `{ id, language, statement, starterCode }` for each discovered assignment.
+
+### `POST /api/session`
+Run a submission and start a background level-1 agent turn.
+- Request body: `{ "assignmentId": "sum-of-list", "code": "…" }` — `code` is optional
+  (omitted / empty / `null` uses the starter code).
+- `200` → `{ "sessionId": "<uuid>", "testResults": { assignmentId, build, tests[], passed, failed, total } }`
+  (`testResults` is the sanitised shape below — no `sandboxDir`, trimmed `stderr`).
+- Errors: `400` (body not an object, missing/bad `assignmentId`, `code` not a string),
+  `404` (unknown `assignmentId`), `500` (internal error).
+
+### `GET /api/session/:id/stream`
+Server-Sent Events. `200`/`text/event-stream`; `404` if the session is unknown. Replays the
+buffered events, then streams live ones, with `: ping` heartbeats.
+
+### `POST /api/session/:id/next-hint`
+Ask for the next hint level (2, then 3).
+- `200` → `{ "level": 2, "status": "idle" }` — the hint itself arrives over SSE. After all
+  three hints: `{ "level": 3, "status": "complete", "message": "All three hint levels have already been delivered." }`.
+- Errors: `404` unknown session, `409` agent still busy.
+
+### Static
+`GET /` and the `web/` assets are served with `express.static`.
+
+### SSE event types that reach the client
+
+Only the types below are ever forwarded; everything else (including the model's free text
+and reasoning) is dropped by `src/eventFilter.ts`.
+
+| Event | Payload |
+|-------|---------|
+| `test_results` | `{ assignmentId, build: { ok, timedOut, signal, stderr } \| null, tests: [{ name, input, expected, got, stderr, exitCode, signal, timedOut, passed }], passed, failed, total }` |
+| `tool_call` | `run_commands` → `{ toolName, command }`; `read_files` → `{ toolName, file }`; `run_tests` → `{ toolName, testName }` |
+| `tool_result` | `run_commands` → `{ toolName, output }`; `run_tests` → `{ toolName, passed, failed, total, build, tests[] }` (`read_files` results are dropped — they would leak the student's code) |
+| `approval` | `{ toolName, command, allowed, reason? }` (in HintLab `allowed` is always `false`) |
+| `hint` | `{ level, tag, text }` |
+| `hint_rejected` | `{ level, reason }` with `reason` ∈ `"wrong level" \| "empty hint" \| "contained code"` (never the rejected text) |
+| `hint_status` | whitelisted (reserved); the server currently emits `hint_rejected` instead |
+| `status` | `{ status }` — `created`, `running`, `idle`, `complete`, `error` |
+| `error` | `{ message }` — a short friendly line, never a stack trace or SDK text |
+| `done` | `{ reason }` |
+
+**Filtering:** raw agent events (`agent_text`, `reasoning`, unguarded tool output) are
+recorded server-side for debugging but never streamed; `filterEvent` applies the allow-list
+and sanitisation to both live events and the replayed history, so late joiners get the same
+contract.
+
+## 7. Architecture
+
+```
+ Browser (web/index.html + app.js — vanilla JS, EventSource)
+   │  POST /api/session  { assignmentId, code }
+   ▼
+ Express + TS server (src/app.ts, src/server.ts)          ESM, run via tsx
+   │
+   ├─ runAssignment(...,{cleanup:false}) ──► sandbox runner (src/runner.ts)
+   │     fresh temp dir os.tmpdir()/hintlab-<uuid>
+   │     writes main.py/main.c + tests.json + input-<name>.txt
+   │     build (gcc) / run (python3|./main) with per-test timeout,
+   │     process-group kill, minimal env (PATH, HOME=sandbox, LANG)
+   │
+   ├─ startSession / nextHint ──► ClineCore agent (src/agent.ts)
+   │     ClineCore.create({ clientName:"hintlab", backendMode:"local" })   (once, lazy)
+   │     cline.start({ interactive:true, prompt, config:{sessionId, providerId, modelId,
+   │                   temperature:0, systemPrompt, cwd, workspaceRoot, enableTools,
+   │                   enableSpawnAgent:false, enableAgentTeams:false, extraTools},
+   │                   toolPolicies, capabilities })
+   │     cline.send({ sessionId, prompt })   for the next hint
+   │     cline.subscribe(handleCoreEvent)    ->  mapped to SSE events
+   │     give_hint (createTool + zod)  +  run_tests (createTool + zod)  via extraTools
+   │
+   ├─ GET  /api/session/:id/stream  (SSE)  ◄── eventFilter.ts allow-list + sanitisation
+   └─ POST /api/session/:id/next-hint
 ```
 
-The web UI is served at `http://localhost:3200/` (plain HTML/CSS/vanilla JS, no
-build step).
+### How the SDK is used
+- **One `ClineCore`**, created lazily in **local backend mode**
+  (`ClineCore.create({ clientName: "hintlab", backendMode: "local" })`) and subscribed once;
+  reused across sessions.
+- **Start + send:** the first turn is
+  `cline.start({ interactive: true, prompt, config: {...}, toolPolicies, capabilities })`;
+  follow-up hint levels use `cline.send({ sessionId, prompt })`.
+- **Tool policies** (`toolPolicies()` in `src/agent.ts`): `run_commands`, `editor`,
+  `apply_patch`, `fetch_web_content`, `skills`, `ask_question`, `submit_and_exit` are
+  `{ enabled: false }`; `read_files`, `search_codebase`, `give_hint`, `run_tests` are
+  auto-approved.
+- **Approval** (`capabilities().requestToolApproval`): returns `{ approved: false }` for
+  everything, so any command attempt is blocked and surfaced as an `approval` (denied)
+  event — defence-in-depth on top of the disabled `run_commands` policy.
+- **`run_commands` allow-list** (`src/allowlist.ts`): first rejects any command containing
+  `; && || ` $ | > & newline CR * ?`, then requires an exact match of the whitelist — only
+  `python3 main.py`, `python3 main.py < input-*.txt`, `gcc -Wall -O0 main.c -o main`,
+  `./main`, `./main < input-*.txt`, and `cat (main.py|main.c|tests.json|input-*.txt)`. Since
+  `run_commands` runs **on the host**, this allow-list (plus the disabled policy) is the only
+  protection between the model and an arbitrary shell.
+- **Custom tools:** `give_hint` and `run_tests` are built with `createTool(...)` + zod
+  schemas and passed through `config.extraTools`. `give_hint` is the only hint sink (the
+  server-side guard runs inside its `execute`); `run_tests` runs student code through the
+  hardened server runner instead of the host shell.
+- **Events:** `cline.subscribe(handleCoreEvent)` maps SDK `agent_event`s (tool starts/ends,
+  done, error) and `status`/`ended` to the SSE allow-list; model text/reasoning are dropped.
+- **Hint guard** (`src/hintGuard.ts`): rejects a hint containing a fenced code block, inline
+  code beyond a short identifier, or any line that looks like source code (control flow,
+  function calls, assignments, casts, indexing/slicing, comparisons, trailing semicolons).
+  A rejected hint becomes a tool error so the model rephrases without code.
+- **Sandboxed runner** (`src/runner.ts`): a fresh temp dir per run, per-test timeouts,
+  `detached:true` + process-group `SIGKILL` to reap child processes, a minimal env (`PATH`,
+  `HOME`=sandbox, `LANG`) so student code cannot see server env or `~/.cline`, signal
+  reporting (`SIGSEGV`, `SIGABRT`, …), and cleanup of the temp dir (except the agent's
+  workdir, which is removed later at TTL).
 
-### Using the UI
+### SDK quirks worth knowing
+1. **Node 22+** — the SDK and `package.json` `engines` require it.
+2. **`moduleResolution: "Bundler"`** (with `module: "ESNext"`) — required by the SDK's type
+   exports (`tsconfig.json`).
+3. **`read_files` needs absolute paths** — the prompt builder injects
+   `path.resolve(sandboxDir, ...)`.
+4. **`send()` follow-ups only work after an `interactive: true` `start()`** —
+   `src/agent.ts` always starts interactively.
+5. **`run_commands` runs on the host** — so the allow-list + disabled policy is the only
+   protection; that's why the agent's own test execution goes through the custom `run_tests`
+   tool instead.
 
-1. Pick an assignment from the drop-down (it shows the statement and language and
-   preloads the buggy starter code into the editor).
-2. Edit the code, then press **Run & get hint**.
-3. The test-results table appears (name, input, expected, got, PASS/FAIL with
-   colour, plus timeout/signal/build errors), and the tutor's activity streams in
-   live on the right.
-4. Hint cards appear as "Level 1: nudge" → "Level 2: where to look" → "Level 3:
-   the concept". Press **Next hint** for the next level (it disables while the
-   tutor is busy). Starting a new run resets everything.
+## 8. Assignments
 
-### Endpoints
+Each assignment is a directory under `assignments/<id>/` containing a `tests.json` and a
+starter source file. `id` is the directory name and must be a "plain slug"
+(`^[a-z0-9]+(-[a-z0-9]+)*$` — lowercase letters/digits separated by single hyphens).
 
-| Method | Path                          | Description                                                      |
-| ------ | ----------------------------- | ---------------------------------------------------------------- |
-| GET    | `/`                           | Web UI (static `web/`)                                           |
-| GET    | `/api/health`                 | Liveness check                                                   |
-| GET    | `/api/assignments`            | List assignments (id, language, statement, starter code)         |
-| POST   | `/api/session`                | Run a submission + start the agent. Body `{ assignmentId, code? }` |
-| GET    | `/api/session/:id/stream`     | Server-Sent Events (replay + live) for the session               |
-| POST   | `/api/session/:id/next-hint`  | Ask the agent for the next hint level (2, then 3)                |
+`tests.json` shape:
 
-`POST /api/session` runs the sandboxed runner, creates a session, starts the
-agent in the background asking for a **level‑1** hint, and immediately returns
-`{ sessionId, testResults }`. If `code` is omitted, the assignment's starter
-program is used. Unknown session ids return `404`; `next-hint` returns `409`
-while the agent is still busy, and `{ level: 3, status: "complete" }` once all
-three levels have been delivered.
-
-```sh
-curl -s -X POST localhost:3200/api/session \
-  -H 'content-type: application/json' \
-  -d '{"assignmentId":"sum-of-list"}'
+```json
+{
+  "assignmentId": "sum-of-list",
+  "language": "python",
+  "statement": "Read space-separated integers on one line and print their sum.",
+  "run": "python3 main.py",
+  "build": "gcc -Wall -O0 main.c -o main",
+  "tests": [
+    { "name": "basic", "input": "1 2 3\n", "expected": "6" }
+  ]
+}
 ```
 
-### SSE event types
+- `language`: `"python"` or `"c"`.
+- `run`: the command that runs the program; `build` (optional, C only): the compile command.
+- Each test: `name` (unique), `input` (fed to stdin verbatim), `expected` (compared to
+  trimmed stdout).
 
-The stream only ever forwards a small **allow-list** of event types, each with a
-sanitised payload that can never contain the model's own text, reasoning, or raw
-SDK/stack-trace messages. Unguarded events (`agent_text`, `reasoning`, and tool
-inputs/outputs that carry model free text) are dropped at the server boundary and
-are never sent — including to late joiners via the replay buffer.
+The starter file is `main.py` (Python) or `main.c` (C) and is loaded into the editor as the
+pre-filled buggy code. To add an assignment, create `assignments/<id>/{tests.json,
+main.py|main.c}`; `listAssignments()` discovers it automatically and the runner reads it
+fresh per session.
 
-| Event            | What reaches the client                                       |
-| ---------------- | ------------------------------------------------------------- |
-| `test_results`   | Test results (name, input, expected, got, pass/fail, signal/timedOut, build error) — never `sandboxDir` |
-| `tool_call`      | Only `run_commands` (command), `read_files` (file name), or `run_tests` (test name) |
-| `tool_result`    | For `run_commands` a short trimmed output; for `run_tests` the pass/fail summary |
-| `approval`       | `allowed`/`denied` + the command (or tool name)               |
-| `hint`           | An accepted, guarded hint (`level`, `tag`, `text`)            |
-| `hint_status` / `hint_rejected` | Only a reason category (e.g. `wrong level`, `contained code`) — never the rejected text |
-| `status`         | Session status string only (`running`/`idle`/`complete`/`error`) |
-| `error`          | A short, friendly human line (no stack traces / raw SDK messages) |
-| `done`           | The agent finished a turn (reason only)                       |
+## 9. Troubleshooting
 
-A `: ping` heartbeat comment is sent every ~15s; buffered events are replayed to
-late-joining clients through the same filter.
+- **`node` too old / `npm install` fails** — the SDK needs Node ≥ 22. `node --version`; install
+  Node 22+ (see §1).
+- **Missing `gcc` or `python3`** — `test:runner` and the C assignment need them.
+  `gcc --version`, `python3 --version`. macOS: `xcode-select --install`. Debian/Ubuntu:
+  `sudo apt install -y build-essential python3`. Fedora: `sudo dnf install -y gcc python3`.
+- **`EADDRINUSE` / "port already in use"** — another process holds the port. Use
+  `PORT=3200 npm start`, or find it: `lsof -i :3000` (macOS) / `ss -ltnp` (Linux), then
+  `kill <pid>`. The bundled checks use `PORT=3200` and manage their own server.
+- **"Tutor timed out" / no hint appears** — a model call was slow or ClinePass expired. Check
+  the feed and server log. The per-turn timeout is `AGENT_TURN_TIMEOUT_MS` (default 5 min).
+- **ClinePass not logged in / expired** — `cline config` shows the current provider; re-run
+  `cline auth cline-pass`. Without valid credentials the agent turns end in an `error` event.
+- **`cline: command not found`** — the CLI isn't on PATH; run `npm install -g cline` and make
+  sure npm's global bin (e.g. `~/.npm-global/bin`) is on `PATH`.
+- **A hint is rejected and the tutor rephrases** — normal: the model proposed a code-bearing
+  hint and the guard made it rephrase; you'll see `hint_rejected` in the feed.
 
-## Safety model
+## 10. Project layout
 
-- The agent runs with `enableSpawnAgent: false` and `enableAgentTeams: false`.
-- All file-editing/network tools are disabled (`editor`, `apply_patch`,
-  `fetch_web_content`, `skills`, `ask_question`, `submit_and_exit` →
-  `{ enabled: false }`). `read_files`, `search_codebase`, `give_hint`, and
-  `run_tests` are auto-approved.
-- The built-in `run_commands` tool is **disabled** (`enabled: false`). Instead the
-  agent gets a custom `run_tests` tool that runs the student's code through the
-  hardened server runner (process-group kill, per-test timeouts, minimal env with
-  `HOME` set to the sandbox dir, signal reporting) — so student code run by the
-  agent can never read server env vars or the credentials in `~/.cline`.
-- `requestToolApproval` still denies everything that is not explicitly allowed, so
-  any command attempt is blocked and shown as an approval-denied line. The strict
-  regex allow-list in `src/allowlist.ts` is retained and unit-tested; it allows
-  only `python3 main.py`, the exact `gcc` build command, `./main`, a stdin
-  redirect from an `input-*.txt` file, and `cat` of `main.py`/`main.c`/`tests.json`
-  or an `input-*.txt` file. Any `$` (variable/command expansion) and any pipe
-  (`echo … | program`) are denied. Each test's input is written to its own
-  `input-<test-name>.txt` file in the workdir.
-- Hints can only be delivered through `give_hint`, and every hint is checked by
-  `src/hintGuard.ts` before it is stored/sent. A hint containing a fenced code
-  block, inline code, a one-line code expression (indexing/slicing, comparison or
-  arithmetic between identifiers, casts, calls, semicolons), or a rewritten
-  solution is rejected — while plain prose like "for x in the list" or "if the
-  list is empty" still passes.
-
-## Run the checks
-
-```sh
-npm run typecheck     # tsc --noEmit
-npm run test:runner   # sandboxed runner against the 3 buggy programs
-npm run check:agent   # end-to-end, REAL model call (starts a server on :3200)
-npm run check:web     # web UI + SSE contract (starts a server on :3200, stops by PID)
+```
+HintLab/
+├── README.md
+├── PLAN.md                  # build plan (aspirational; the code is the source of truth)
+├── package.json             # deps + scripts; engines.node >= 22
+├── tsconfig.json            # ESNext + moduleResolution Bundler
+├── .gitignore               # node_modules, dist, .env, *.log, *.tmp
+├── assignments/
+│   ├── sum-of-list/{tests.json, main.py}
+│   ├── is-palindrome/{tests.json, main.py}
+│   └── average-marks/{tests.json, main.c}
+├── src/
+│   ├── server.ts            # bootstrap: createApp, cleanup loop, listen
+│   ├── app.ts               # express routes + static web/
+│   ├── config.ts            # env (PORT, timeouts, provider/model)
+│   ├── types.ts             # shared TS types
+│   ├── assignments.ts       # discover/load/validate tests.json
+│   ├── runner.ts            # sandboxed build+run+compare (Python & C)
+│   ├── agent.ts             # ClineCore agent (policies, allow-list, give_hint, run_tests)
+│   ├── allowlist.ts         # run_commands allow-list
+│   ├── hintGuard.ts         # server-side hint guard
+│   ├── eventFilter.ts       # SSE allow-list + sanitisation
+│   ├── sessions.ts          # in-memory sessions + event bus + TTL cleanup
+│   └── sse.ts               # SSE helpers
+├── scripts/
+│   ├── check-runner.ts      # sandboxed runner checks (no model)
+│   ├── check-agent.ts       # allow-list/hint-guard units + real-model e2e
+│   └── check-web.ts         # static UI + SSE contract + real-model session
+├── web/
+│   ├── index.html
+│   ├── style.css
+│   └── app.js               # vanilla JS UI (EventSource SSE client)
+└── cline-proof/             # prompts + session logs + test fixtures (see below)
 ```
 
-`test:runner` runs the sandboxed runner against all three buggy starter programs
-and asserts the exact expected pass/fail of every test, plus a correct solution
-for each assignment, an infinite-loop program (must time out), and a C program
-with a compile error (must report a build failure).
+## 11. How this was built
 
-`check:agent` unit-tests the allow-list (including `$`-expansion and pipe
-injection attempts like `echo $HOME | python3 main.py`) and the hint guard (new
-one-line code expressions are rejected; prose like "for x in the list" passes),
-then starts the server on `PORT=3200`, posts a `sum-of-list` session, reads the
-SSE stream, and requests hints level 2 and 3. It asserts exactly one accepted hint
-per level, that no hint contains code, that **no `agent_text`/`reasoning` and no
-rejected hint text arrive over SSE**, that `run_commands` was never executed (and
-never approved), that `run_tests` was used (or tests were otherwise reported), and
-that no edit/write tool ran. It prints the hints verbatim, the distinct SSE event
-types, and the approval decisions, and exits non-zero on failure (overall timeout
-8 minutes). It leaves no server running.
+All application code was written by the **Cline CLI** from the prompts in
+`cline-proof/prompts/`, with the full session logs in `cline-proof/sessions/` (and in the
+Cline session history). The git commits follow the prompt steps (`00-plan`,
+`01-server-runner`, `02-agent`, `02c-runner-hardening`, `03-web-ui`).
 
-`check:web` starts the server on `PORT=3200`, fetches `/` (asserting the page
-loads with the app title and that `/app.js` and `/style.css` return 200), fetches
-`/api/assignments`, starts one real session on `is-palindrome` (or
-`average-marks`), reads the SSE stream until the level-1 hint (or a timeout), and
-asserts the event types contain no `agent_text`/`reasoning`. It prints the event
-types seen and the hint, then stops the server by PID. It leaves no server running.
+## 12. Disclosure
 
-## Typecheck / build
-
-```sh
-npm run typecheck   # tsc --noEmit
-npm run build       # tsc
-```
+- Example Cline SDK snippets (in the now-removed `cline-proof/reference/sdk-check/`) were
+  prepared **before** the sprint and used only as reference material for Cline's SDK API.
+  They were never imported by the app and were removed from the repo during the sprint (they
+  remain in git history). All app code was written by Cline during the sprint, as shown in
+  `cline-proof/` (prompts and session logs) and the Cline session history.
+- The three sample buggy programs and their `tests.json` files under
+  `cline-proof/reference/fixtures/` were prepared **before** the sprint as test data, and
+  were copied unchanged into `assignments/`.
