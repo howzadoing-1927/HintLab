@@ -1,0 +1,3090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1791100011489_tme58 - Conversation Export</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #09090b;
+      color: #fafafa;
+      line-height: 1.6;
+    }
+
+    html,
+    body,
+    .content pre,
+    .tool-content,
+    .line-content,
+    .dots-container {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar,
+    .content pre::-webkit-scrollbar,
+    .tool-content::-webkit-scrollbar,
+    .line-content::-webkit-scrollbar,
+    .dots-container::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+    
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(9, 9, 11, 0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid #27272a;
+      padding: 1rem 1.5rem;
+    }
+    
+    .header-content {
+      max-width: 56rem;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    
+    .stats {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      color: #a1a1aa;
+    }
+    
+    .stat svg {
+      width: 1rem;
+      height: 1rem;
+    }
+    
+    .messages {
+      max-width: 56rem;
+      margin: 0 auto;
+    }
+    
+    .message {
+      padding: 1.5rem;
+      border-bottom: 1px solid #18181b;
+    }
+    
+    .message.user {
+      background: rgba(39, 39, 42, 0.3);
+    }
+    
+    .message-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    
+    .avatar {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    
+    .avatar.user {
+      background: #3b82f6;
+      color: white;
+    }
+    
+    .avatar.assistant {
+      background: #27272a;
+      color: #a1a1aa;
+    }
+    
+    .role {
+      font-weight: 500;
+      font-size: 0.875rem;
+    }
+    
+    .model {
+      font-size: 0.75rem;
+      color: #71717a;
+      font-family: ui-monospace, monospace;
+    }
+    
+    .content {
+      padding-left: 2.75rem;
+    }
+    
+    .content p {
+      margin-bottom: 0.5rem;
+    }
+    
+    .content pre {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      overflow-x: auto;
+      font-family: ui-monospace, monospace;
+      font-size: 0.875rem;
+      margin: 0.75rem 0;
+    }
+    
+    .content code {
+      font-family: ui-monospace, monospace;
+      background: #27272a;
+      padding: 0.125rem 0.25rem;
+      border-radius: 0.25rem;
+      font-size: 0.875rem;
+    }
+    
+    .content pre code {
+      background: transparent;
+      padding: 0;
+    }
+    
+    .tool-block {
+      margin: 0.75rem 0;
+      border: 1px solid #27272a;
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+    
+    .tool-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: #18181b;
+      font-family: ui-monospace, monospace;
+      font-size: 0.875rem;
+    }
+    
+    .tool-header svg {
+      width: 1rem;
+      height: 1rem;
+      color: #71717a;
+    }
+    
+    .tool-content {
+      padding: 1rem;
+      font-family: ui-monospace, monospace;
+      font-size: 0.75rem;
+      background: #09090b;
+      white-space: pre-wrap;
+      word-break: break-all;
+      overflow: auto;
+    }
+    
+    .diff-block {
+      margin: 0.75rem 0;
+      border: 1px solid #27272a;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      background: #09090b;
+    }
+    
+    .diff-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1rem;
+      background: #18181b;
+      border-bottom: 1px solid #27272a;
+      font-family: ui-monospace, monospace;
+      font-size: 0.875rem;
+    }
+    
+    .diff-header svg {
+      width: 1rem;
+      height: 1rem;
+      color: #71717a;
+    }
+    
+    .diff-stats {
+      margin-left: auto;
+      display: flex;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+    }
+    
+    .diff-stats .added {
+      color: #4ade80;
+    }
+    
+    .diff-stats .removed {
+      color: #f87171;
+    }
+    
+    .diff-content {
+      font-family: ui-monospace, monospace;
+      font-size: 0.75rem;
+    }
+    
+    .diff-line {
+      display: flex;
+      border-bottom: 1px solid #18181b;
+    }
+    
+    .diff-line:last-child {
+      border-bottom: none;
+    }
+    
+    .diff-line.added {
+      background: rgba(74, 222, 128, 0.1);
+    }
+    
+    .diff-line.removed {
+      background: rgba(248, 113, 113, 0.1);
+    }
+    
+    .line-num {
+      width: 3rem;
+      padding: 0.125rem 0.5rem;
+      text-align: right;
+      color: #52525b;
+      border-right: 1px solid #27272a;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    
+    .line-indicator {
+      width: 1.5rem;
+      padding: 0.125rem 0.25rem;
+      text-align: center;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    
+    .line-indicator.added {
+      color: #4ade80;
+      font-weight: bold;
+    }
+    
+    .line-indicator.removed {
+      color: #f87171;
+      font-weight: bold;
+    }
+    
+    .line-content {
+      padding: 0.125rem 0.75rem;
+      white-space: pre;
+      overflow-x: auto;
+      flex: 1;
+    }
+    
+    .line-content.added {
+      color: #86efac;
+    }
+    
+    .line-content.removed {
+      color: #fca5a5;
+    }
+    
+    .badge {
+      font-size: 0.625rem;
+      padding: 0.125rem 0.375rem;
+      border-radius: 0.25rem;
+      background: #27272a;
+      color: #71717a;
+    }
+    
+    .badge.new-file {
+      background: rgba(74, 222, 128, 0.2);
+      color: #4ade80;
+    }
+    
+    .error {
+      color: #f87171;
+    }
+    
+    .success {
+      color: #4ade80;
+    }
+    
+    .file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      margin: 0.5rem 0;
+    }
+    
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.375rem 0.75rem;
+      background: #18181b;
+      border-radius: 0.375rem;
+      font-family: ui-monospace, monospace;
+      font-size: 0.75rem;
+      color: #a1a1aa;
+    }
+    
+    .command-block {
+      margin: 0.5rem 0;
+      padding: 0.75rem 1rem;
+      background: #18181b;
+      border-radius: 0.5rem;
+      font-family: ui-monospace, monospace;
+      font-size: 0.75rem;
+    }
+    
+    .command-label {
+      font-size: 0.625rem;
+      color: #71717a;
+      margin-bottom: 0.25rem;
+    }
+    
+    .dots-nav {
+      position: fixed;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    
+    .dots-nav-btn {
+      padding: 0.375rem;
+      border-radius: 0.5rem;
+      background: #27272a;
+      border: 1px solid #3f3f46;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .dots-nav-btn:hover {
+      background: #3f3f46;
+    }
+    
+    .dots-nav-btn svg {
+      width: 0.75rem;
+      height: 0.75rem;
+      color: #a1a1aa;
+    }
+    
+    .dots-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      background: #27272a;
+      border: 1px solid #3f3f46;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+    
+    .dot {
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    
+    .dot.user {
+      background: rgba(59, 130, 246, 0.4);
+    }
+    
+    .dot.user:hover {
+      background: rgba(59, 130, 246, 0.6);
+    }
+    
+    .dot.assistant {
+      background: rgba(161, 161, 170, 0.4);
+    }
+    
+    .dot.assistant:hover {
+      background: rgba(161, 161, 170, 0.6);
+    }
+    
+    .dot.active {
+      background: #3b82f6;
+      transform: scale(1.25);
+    }
+    
+    @media (max-width: 1024px) {
+      .dots-nav {
+        display: none;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .stats {
+        gap: 1rem;
+      }
+      
+      .content {
+        padding-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-content">
+      <div class="stats">
+        <div class="stat">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+          <span>26 messages</span>
+        </div>
+        
+        
+        <div class="stat">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/></svg>
+          <span>1,605,512 tokens</span>
+        </div>
+        
+        
+        <div class="stat">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>10/4/2026, 1:22:04 PM</span>
+        </div>
+        
+      </div>
+    </div>
+  </header>
+  
+  <div class="messages">
+    
+    <div class="message user">
+      <div class="message-header">
+        <div class="avatar user">
+          U
+        </div>
+        <span class="role">User</span>
+        
+      </div>
+      <div class="content">
+        <div>Implement Step 04 of PLAN.md (the web UI) for HintLab in this repo (/Users/prakharagarwal/ClineHackathon), plus the server-side fixes a tester found in the live Step 02 build. In the proof log this is Cline prompt 03 (web-ui). Build on the existing code (src/app.ts, src/agent.ts, src/sessions.ts, src/sse.ts, src/hintGuard.ts, src/allowlist.ts, src/runner.ts, scripts/check-runner.ts, scripts/check-agent.ts). Do not modify anything under cline-proof/.<br><br>A. Server-side SSE filtering (most important). The agent_text and reasoning events are unguarded model output and have leaked fixes (for example the corrected division for the average) to the browser. Fix this on the server, not just in the UI: GET /api/session/:id/stream must never send agent_text or reasoning events (and must not put model free text into any other event either, including tool_call/tool_result payloads of give_hint attempts that the guard rejected). Use an explicit allow-list of event types that may go to the client: test_results, tool_call (only for run_commands/read_files, with command or file name), tool_result (for run_commands: a short trimmed output summary; never the model&#039;s own text), approval (allowed/denied + command), hint (accepted, guarded hints only), hint_status/hint_rejected (no rejected text, just the reason category), status, error (friendly message only, see B), done. Keep the full raw events server-side only (for logs/debugging) if you want, but never stream them. Apply the same filter to the replay of past events.<br><br>B. Friendly errors. Turn raw error events into short human lines before they are sent, for example &quot;Command blocked by allow-list: &lt;command&gt;&quot;, &quot;Hint blocked: contained code, asking the tutor to rephrase&quot;, &quot;Hint blocked: wrong level, asking the tutor to retry&quot;, &quot;Tutor timed out, try again&quot;. No stack traces or raw SDK messages in the browser.<br><br>C. Web UI in web/ (plain HTML + CSS + vanilla JS, no build step, served by Express as static files at /). Clean, demo-ready on a projector: large readable fonts (base 18px+), high contrast, generous spacing, a simple header &quot;HintLab: a debugging tutor that never writes the fix&quot;. Layout:<br>  1. Assignment picker (from GET /api/assignments) showing the statement and language; choosing one preloads its buggy starter code into an editable monospace textarea.<br>  2. &quot;Run &amp; get hint&quot; button -&gt; POST /api/session { assignmentId, code }; show the test results table (test name, input, expected, got, PASS/FAIL with colour, plus timeout/signal/build error info if present) from testResults.<br>  3. Live feed from GET /api/session/:id/stream (EventSource): only tool calls (the commands the tutor ran and their short results), test results, approvals and denials, hints and friendly status/error lines. Each item one short line with a small icon or label. Auto-scroll.<br>  4. Hint cards labelled &quot;Level 1: nudge&quot;, &quot;Level 2: where to look&quot;, &quot;Level 3: the concept&quot;, appearing as each hint arrives. Hint text must be inserted with textContent (never innerHTML).<br>  5. Loading states: a spinner/&quot;Tutor is reading your code...&quot; while waiting for the first hint (typically 10-13 s), and &quot;Thinking about the next hint...&quot; after &quot;Next hint&quot; (typically 5-9 s). Disable the Next hint button while busy; if the server returns 409 show &quot;Tutor is still busy, please wait&quot; and keep the button disabled until the next hint/status arrives. After level 3 show &quot;All hints given&quot; and keep the button disabled. Starting a new run closes the old EventSource and resets the cards.<br>  6. Handle server errors (400/404/network) with a visible friendly message.<br><br>D. Smaller guard fixes (examples below are described in words on purpose; turn them into your own test strings):<br>  - Hint guard (src/hintGuard.ts): also block hints that embed a one-line code expression inside prose, with or without backticks. Examples the tester saw or expects: comparing a cleaned string variable for equality against its reversed slice; a range call that starts at one and ends at the length of the nums list; the sum variable divided by n; indexing nums with i; reversing s with a slice; and a C-style float cast of sum divided by n. In general: identifiers combined with code syntax such as call parentheses, square-bracket indexing or slicing, comparison or arithmetic operators between identifiers, casts, or semicolons. Stop the false positive on plain English prose such as the phrase &quot;for x in the list&quot; or &quot;if the list is empty&quot;: programming keywords on their own are not code; only flag them when real code syntax is present. Add unit tests in scripts/check-agent.ts for both the new blocked cases and the prose that must pass.<br>  - Allow-list (src/allowlist.ts): deny any dollar sign anywhere in a command (variable or command expansion, for example echoing the HOME variable into the Python program), and remove the echo/printf pipe forms entirely so that no command containing a pipe character is allowed. Instead, when creating the agent workdir, write each test&#039;s input to its own file (named input-&lt;test-name&gt;.txt with a safe slug) and tell the agent in its prompt to feed those files to the program with a stdin redirect from that file name. Keep the other allowed forms: running python3 on main.py, the exact gcc build command from tests.json, running ./main, the stdin redirect from an input-*.txt file in the workdir, and cat of main.py, main.c, tests.json or an input-*.txt file. Update the allow-list unit tests so that echoing the HOME variable piped into the program, echoing a literal number piped into the program, a stdin redirect from a dollar-sign variable, and any other pipe are all denied.<br><br>F. Close the agent-side env leak found in 02c: the SDK&#039;s built-in run_commands runs student code on the host with the server&#039;s full environment and real HOME, so student code run by the agent could read server env vars or the ClinePass credentials in ~/.cline. Disable the built-in run_commands tool for the agent (enabled false in toolPolicies) and instead give the agent a custom run_tests tool (createTool + zod, via extraTools, auto-approved) that takes an optional test name and runs the student&#039;s code in its workdir through the hardened server runner (process-group kill, timeouts, minimal env with HOME set to the temp dir, signal reporting), returning per-test input, expected, got, stderr, signal and pass/fail. Keep the allow-list module and its unit tests, and keep requestToolApproval denying everything that is not explicitly allowed, so any command attempt is still blocked and shown as an approval-denied line. Show run_tests calls in the live feed as tool calls. Update check:agent to assert that run_commands was never executed and that run_tests was used or the tests were otherwise reported.<br><br>E. Checks. Keep npm run typecheck, npm run test:runner and npm run check:agent passing (update check:agent for the new SSE contract: it must assert that NO agent_text or reasoning events, and no rejected hint text, arrive over SSE, while hints at levels 1, 2 and 3 still arrive). Add scripts/check-web.ts with npm script &quot;check:web&quot; that starts the server on PORT=3200, fetches / and asserts the page loads (status 200, contains the app root/title, and that /app.js or whatever script it references and the CSS load with 200), fetches /api/assignments, starts one real session on is-palindrome or average-marks, reads the SSE stream until the level-1 hint (or a timeout), asserts the set of event types contains no agent_text/reasoning, prints the event types seen and the hint, and stops the server by PID. If a headless browser is already available you may also load the page in it, but do not install large browser downloads.<br><br>Update README.md (UI usage, SSE event contract, check:web).<br><br>Port rule: another tester may be using PORT=3100. Use PORT=3200 for all your server checks. Never kill, signal, or bind to processes on port 3100, no broad pkill patterns; stop only processes you started (by PID). Leave no server running at the end.<br><br>Verify before finishing: npm run typecheck, npm run test:runner, npm run check:agent, npm run check:web. Fix anything that fails and re-run. Report files changed, the SSE event types that now reach the client, the new allow-list, and the check outputs.</div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="message-header">
+        <div class="avatar assistant">
+          A
+        </div>
+        <span class="role">Assistant</span>
+        <span class="model">cline-pass/deepseek-v4-pro</span>
+      </div>
+      <div class="content">
+        
+<div>I&#039;ll start by exploring the repository structure and reading all the relevant files to understand the existing code before making any changes.</div>
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; pwd &amp;&amp; echo &#039;--- git status ---&#039; &amp;&amp; git --no-pager status &amp;&amp; echo &#039;--- ls root ---&#039; &amp;&amp; ls -la</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 2</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;--- full tree (excluding node_modules/cline-proof) ---&#039; &amp;&amp; find . -type f -not -path &#039;./node_modules/*&#039; -not -path &#039;./cline-proof/*&#039; -not -path &#039;./.git/*&#039; | sort</code>
+    </div>
+  
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/PLAN.md&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/package.json&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/README.md&quot;
+    }
+  ]
+}</div>
+    </div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>Let me read the full PLAN.md and all the source files in parallel.</div>
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/PLAN.md&quot;,
+      &quot;start_line&quot;: 60,
+      &quot;end_line&quot;: 266
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/app.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/agent.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/sessions.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/sse.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/hintGuard.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/allowlist.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/runner.ts&quot;
+    }
+  ]
+}</div>
+    </div>
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/types.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/assignments.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/config.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/server.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/scripts/check-runner.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/scripts/check-agent.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/tsconfig.json&quot;
+    }
+  ]
+}</div>
+    </div>
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;--- assignments ---&#039; &amp;&amp; for f in assignments/*/*; do echo &quot;===== $f =====&quot;; cat &quot;$f&quot;; echo; done</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>Let me read the full contents of the truncated files (agent.ts, check-agent.ts, runner.ts) and check the cline-proof reference materials.</div>
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/agent.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/scripts/check-agent.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/runner.ts&quot;,
+      &quot;start_line&quot;: 112,
+      &quot;end_line&quot;: 200
+    }
+  ]
+}</div>
+    </div>
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;--- cline-proof tree ---&#039; &amp;&amp; find cline-proof -type f | sort &amp;&amp; echo &#039;--- prompts ---&#039; &amp;&amp; for f in cline-proof/prompts/*; do echo &quot;===== $f =====&quot;; cat &quot;$f&quot;; echo; done</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>Let me read the remaining truncated portions and the SDK reference patterns.</div>
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/agent.ts&quot;,
+      &quot;start_line&quot;: 80,
+      &quot;end_line&quot;: 324
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/scripts/check-agent.ts&quot;,
+      &quot;start_line&quot;: 68,
+      &quot;end_line&quot;: 227
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/prompts/03-web-ui.md&quot;
+    }
+  ]
+}</div>
+    </div>
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/reference/sdk-check/02-clinecore-mock.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/reference/sdk-check/03-real-provider-smoke.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/reference/sdk-check/README.md&quot;
+    }
+  ]
+}</div>
+    </div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/prompts/03-web-ui.md&quot;,
+      &quot;start_line&quot;: 19,
+      &quot;end_line&quot;: 22
+    }
+  ]
+}</div>
+    </div>
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/prompts/02-agent.md&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/prompts/02c-runner-hardening.md&quot;
+    }
+  ]
+}</div>
+    </div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>Let me inspect the SDK&#039;s type definitions to understand exact event shapes and tool APIs.</div>
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; ls node_modules/@cline/sdk &amp;&amp; echo &#039;--- dist files ---&#039; &amp;&amp; find node_modules/@cline/sdk -maxdepth 2 -type f | head -50</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 2</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; cat node_modules/@cline/sdk/package.json</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; cat node_modules/@cline/sdk/dist/index.d.ts</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 2</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; find node_modules/@cline/core -maxdepth 2 -type f | head -80</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; cat node_modules/@cline/core/dist/types.d.ts</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 2</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; cat node_modules/@cline/core/dist/ClineCore.d.ts</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; cat node_modules/@cline/core/dist/types/events.d.ts</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 2</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; find node_modules/@cline -path &#039;*tool*&#039; -name &#039;*.d.ts&#039; | head -40</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; find node_modules/@cline/shared -name &#039;*.d.ts&#039; | xargs grep -l &#039;AgentEvent&#039; 2&gt;/dev/null | head</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 2</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; cat node_modules/@cline/core/dist/extensions/tools/types.d.ts</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; cat node_modules/@cline/shared/dist/agents/types.d.ts | head -250</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; find node_modules/@cline/shared/dist -name &#039;*.d.ts&#039; | xargs grep -l &#039;createTool|AgentToolContext|ToolPolicy&#039; 2&gt;/dev/null</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 2</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; cat node_modules/@cline/shared/dist/llms/tools.d.ts 2&gt;/dev/null | head -120</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; find node_modules/@cline/shared/dist -name &#039;*.d.ts&#039; | xargs grep -ln &#039;createTool&#039; 2&gt;/dev/null; echo &#039;---agent index---&#039;; cat node_modules/@cline/shared/dist/agent.d.ts 2&gt;/dev/null | head -160</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; cat node_modules/@cline/shared/dist/tools/create.d.ts</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 2</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; grep -rn &#039;ToolPolicyMap|toolPolicies&#039; node_modules/@cline/shared/dist/*.d.ts node_modules/@cline/core/dist/**/*.d.ts 2&gt;/dev/null | head -20</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; find node_modules/@cline/core/dist/cline-core -name &#039;*.d.ts&#039; | xargs grep -ln &#039;toolPolicies&#039; 2&gt;/dev/null</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 2</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; grep -rn &#039;toolPolicies|extraTools|requestToolApproval|ToolPolicy&#039; node_modules/@cline/core/dist/cline-core/types.d.ts 2&gt;/dev/null | head -40</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; grep -rn &#039;toolPolicies|extraTools|requestToolApproval|capabilities|toolPolicy&#039; node_modules/@cline/core/dist/cline-core/types.d.ts | head -40</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; grep -rn &#039;toolPolicies|extraTools|requestToolApproval|capabilities|ToolPolicy&#039; node_modules/@cline/core/dist/cline-core/types.d.ts | head -40; echo &#039;--- wc ---&#039;; wc -l node_modules/@cline/core/dist/cline-core/types.d.ts</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; cat node_modules/@cline/core/dist/cline-core/types.d.ts</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; cat node_modules/@cline/core/dist/types/config.d.ts</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 2</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; grep -rn &#039;toolPolicies|extraTools|AgentConfig&#039; node_modules/@cline/shared/dist/agents/*.d.ts | head -30</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>Let me read the exact <code>handleCoreEvent</code> implementation in agent.ts.</div>
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/agent.ts&quot;,
+      &quot;start_line&quot;: 180,
+      &quot;end_line&quot;: 256
+    }
+  ]
+}</div>
+    </div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>Let me read the remaining truncated portion of check-agent.ts (lines 140-200) to see the full e2e setup.</div>
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/scripts/check-agent.ts&quot;,
+      &quot;start_line&quot;: 140,
+      &quot;end_line&quot;: 200
+    }
+  ]
+}</div>
+    </div>
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/.gitignore&quot;
+    }
+  ]
+}</div>
+    </div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>I now have a complete understanding of the codebase. Let me lay out my plan and begin implementing.<br><br><strong>Plan:</strong><br>1. Create <code>src/events.ts</code> — server-side SSE allow-list filter (client event whitelist + friendly errors).<br>2. Wire the filter into <code>src/sessions.ts</code> (<code>emitEvent</code> + <code>addClient</code> replay).<br>3. Rewrite <code>src/hintGuard.ts</code> to block embedded code expressions while passing prose.<br>4. Update <code>src/allowlist.ts</code> (deny <code>$</code> and <code>|</code>, drop echo/printf pipes, keep stdin-from-input-file).<br>5. Add <code>runTestsInWorkdir</code> + input files to <code>src/runner.ts</code>; add <code>run</code>/<code>build</code>/<code>tests</code> to <code>Session</code>.<br>6. Update <code>src/agent.ts</code> (disable <code>run_commands</code>, add auto-approved <code>run_tests</code> tool, prompt updates).<br>7. Update <code>src/app.ts</code> + <code>src/types.ts</code> (pass run/build/tests).<br>8. Build <code>web/</code> (index.html, style.css, app.js).<br>9. Update <code>scripts/check-agent.ts</code> + add <code>scripts/check-web.ts</code> + package.json.<br>10. Update README, then run all checks.<br><br>Let me start with the core server files.</div>
+
+    <div class="diff-block">
+      <div class="diff-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m10 13-2 2 2 2"/><path d="m14 17 2-2-2-2"/></svg>
+        <span>/Users/prakharagarwal/ClineHackathon/src/events.ts</span>
+        <span class="badge">ts</span>
+        <span class="badge new-file">New File</span>
+        <div class="diff-stats">
+          <span class="added">+189</span>
+          
+        </div>
+      </div>
+      <div class="diff-content">
+        
+      <div class="diff-line added">
+        <div class="line-num">1</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">import path from &quot;node:path&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">2</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">import { extractCommands } from &quot;./allowlist&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">3</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">import type { RunResult } from &quot;./types&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">4</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">5</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">/**</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">6</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> * The server-side SSE filter.</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">7</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> *</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">8</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> * `GET /api/session/:id/stream` must NEVER leak unguarded model output to the</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">9</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> * browser. This module defines an explicit allow-list of event types (and a</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">10</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> * per-type sanitisation) that may reach a client. Every other event —</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">11</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> * including `agent_text`, `reasoning`, and any tool payload that carries the</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">12</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> * model&#039;s own free text — is dropped here.</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">13</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> *</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">14</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> * Raw events are still stored on the session (`session.events`) for</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">15</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> * server-side logging/debugging; this filter only governs what is written to</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">16</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> * an SSE client, for both live events and the replay of past events.</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">17</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> */</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">18</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">19</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">export interface ClientEvent {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">20</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  name: string;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">21</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  data: unknown;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">22</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">23</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">24</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function asRecord(data: unknown): Record&lt;string, unknown&gt; | null {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">25</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return typeof data === &quot;object&quot; &amp;&amp; data !== null &amp;&amp; !Array.isArray(data)</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">26</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    ? (data as Record&lt;string, unknown&gt;)</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">27</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    : null;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">28</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">29</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">30</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function stringField(data: unknown, key: string): string {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">31</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const rec = asRecord(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">32</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const v = rec?.[key];</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">33</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return typeof v === &quot;string&quot; ? v : &quot;&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">34</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">35</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">36</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function toolNameOf(data: unknown): string {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">37</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return stringField(data, &quot;toolName&quot;);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">38</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">39</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">40</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">/** Map a guard/level reason to a short, stable category (never the raw text). */</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">41</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function reasonCategory(reason: string): string {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">42</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  if (reason === &quot;wrong level&quot;) return &quot;wrong level&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">43</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  if (reason === &quot;empty hint&quot; || reason === &quot;empty&quot;) return &quot;empty&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">44</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  if (/code|fenced|source|inline|expression|solution|backtick/i.test(reason)) {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">45</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    return &quot;contained code&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">46</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  }</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">47</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return &quot;blocked&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">48</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">49</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">50</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">/** Turn a raw SDK/provider error into one short human line (no stack traces). */</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">51</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function friendlyError(data: unknown): ClientEvent {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">52</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const msg = stringField(data, &quot;message&quot;).toLowerCase();</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">53</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  let message: string;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">54</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  if (/(timeout|timed out|etimedout|abort)/.test(msg)) {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">55</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    message = &quot;Tutor timed out, try again&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">56</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  } else if (/(rate|quota|429|overload|capacity|busy|too many)/.test(msg)) {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">57</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    message = &quot;Tutor is busy, try again in a moment&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">58</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  } else if (/(auth|unauthorized|401|403|credential|key|token)/.test(msg)) {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">59</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    message = &quot;Tutor is unavailable, check the server&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">60</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  } else {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">61</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    message = &quot;Something went wrong, please try again&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">62</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  }</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">63</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return { name: &quot;error&quot;, data: { message } };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">64</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">65</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">66</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function fileOf(input: unknown): string | undefined {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">67</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const rec = asRecord(input);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">68</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  if (!rec) return undefined;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">69</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const p = typeof rec.path === &quot;string&quot; ? rec.path : typeof rec.file === &quot;string&quot; ? rec.file : undefined;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">70</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return p ? path.basename(p) : undefined;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">71</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">72</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">73</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">/** tool_call: only run_commands / read_files / run_tests, with command or file name. */</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">74</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function toolCall(data: unknown): ClientEvent | null {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">75</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const name = toolNameOf(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">76</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const input = asRecord(data)?.input;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">77</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  if (name === &quot;run_commands&quot;) {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">78</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    const command = extractCommands(input);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">79</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    return { name: &quot;tool_call&quot;, data: { toolName: &quot;run_commands&quot;, command } };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">80</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  }</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">81</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  if (name === &quot;read_files&quot;) {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">82</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    return { name: &quot;tool_call&quot;, data: { toolName: &quot;read_files&quot;, file: fileOf(input) } };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">83</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  }</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">84</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  if (name === &quot;run_tests&quot;) {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">85</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    const test = asRecord(input)?.test;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">86</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    return { name: &quot;tool_call&quot;, data: { toolName: &quot;run_tests&quot;, test: typeof test === &quot;string&quot; ? test : undefined } };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">87</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  }</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">88</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  // give_hint / search_codebase / anything else may carry model text — drop.</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">89</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return null;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">90</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">91</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">92</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function shortSummary(output: unknown): string {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">93</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const s = typeof output === &quot;string&quot; ? output : JSON.stringify(output ?? &quot;&quot;);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">94</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const trimmed = s.replace(/\s+/g, &quot; &quot;).trim();</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">95</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return trimmed.length &gt; 200 ? `${trimmed.slice(0, 200)}…` : trimmed;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">96</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">97</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">98</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">/** tool_result: a short trimmed summary; never the model&#039;s own text. */</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">99</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function toolResult(data: unknown): ClientEvent | null {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">100</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const name = toolNameOf(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">101</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const output = asRecord(data)?.output;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">102</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  if (name === &quot;run_commands&quot;) {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">103</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    return { name: &quot;tool_result&quot;, data: { toolName: &quot;run_commands&quot;, summary: shortSummary(output) } };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">104</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  }</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">105</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  if (name === &quot;run_tests&quot;) {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">106</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    const o = asRecord(output);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">107</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    const total = typeof o?.total === &quot;number&quot; ? o.total : undefined;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">108</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    const passed = typeof o?.passed === &quot;number&quot; ? o.passed : undefined;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">109</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    const failed = typeof o?.failed === &quot;number&quot; ? o.failed : undefined;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">110</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    const summary = total === undefined ? &quot;ran tests&quot; : `${total} test(s), ${passed ?? 0} passed, ${failed ?? 0} failed`;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">111</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    return { name: &quot;tool_result&quot;, data: { toolName: &quot;run_tests&quot;, summary } };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">112</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  }</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">113</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  // read_files result is student file content; give_hint result is model-adjacent. Drop.</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">114</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return null;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">115</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">116</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">117</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function approval(data: unknown): ClientEvent {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">118</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const rec = asRecord(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">119</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const commands = extractCommands(rec?.commands);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">120</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">121</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    name: &quot;approval&quot;,</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">122</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    data: { allowed: rec?.allowed === true, commands, toolName: stringField(data, &quot;toolName&quot;) },</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">123</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">124</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">125</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">126</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function hint(data: unknown): ClientEvent {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">127</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return { name: &quot;hint&quot;, data };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">128</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">129</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">130</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function hintRejected(data: unknown): ClientEvent {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">131</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const rec = asRecord(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">132</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const level = typeof rec?.level === &quot;number&quot; ? rec.level : undefined;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">133</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const reason = stringField(data, &quot;reason&quot;);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">134</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return { name: &quot;hint_rejected&quot;, data: { level, reason: reasonCategory(reason) } };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">135</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">136</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">137</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function status(data: unknown): ClientEvent {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">138</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const rec = asRecord(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">139</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  // SDK &quot;notice&quot; events carry a free-form message; keep only the notice type.</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">140</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  if (rec &amp;&amp; &quot;noticeType&quot; in rec &amp;&amp; &quot;message&quot; in rec) {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">141</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    const { message: _message, ...rest } = rec;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">142</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    return { name: &quot;status&quot;, data: rest };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">143</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  }</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">144</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return { name: &quot;status&quot;, data };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">145</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">146</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">147</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function testResults(data: unknown): ClientEvent {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">148</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const r = data as RunResult;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">149</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const { sandboxDir: _sandboxDir, ...rest } = r;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">150</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return { name: &quot;test_results&quot;, data: rest };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">151</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">152</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">153</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function done(data: unknown): ClientEvent {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">154</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const reason = stringField(data, &quot;reason&quot;);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">155</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  // `done` also carries the model&#039;s final text — never send it.</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">156</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return { name: &quot;done&quot;, data: { reason: reason || undefined } };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">157</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">158</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">159</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">/**</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">160</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> * Map a raw server event to the client-safe event that may be streamed, or</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">161</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> * `null` when the event type is not on the client allow-list.</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">162</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> */</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">163</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">export function toClientEvent(name: string, data: unknown): ClientEvent | null {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">164</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  switch (name) {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">165</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    case &quot;test_results&quot;:</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">166</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">      return testResults(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">167</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    case &quot;tool_call&quot;:</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">168</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">      return toolCall(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">169</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    case &quot;tool_result&quot;:</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">170</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">      return toolResult(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">171</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    case &quot;approval&quot;:</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">172</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">      return approval(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">173</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    case &quot;hint&quot;:</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">174</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">      return hint(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">175</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    case &quot;hint_status&quot;:</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">176</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    case &quot;hint_rejected&quot;:</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">177</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">      return hintRejected(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">178</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    case &quot;status&quot;:</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">179</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">      return status(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">180</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    case &quot;error&quot;:</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">181</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">      return friendlyError(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">182</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    case &quot;done&quot;:</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">183</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">      return done(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">184</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    default:</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">185</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">      // agent_text, reasoning, and anything not explicitly allow-listed.</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">186</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">      return null;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">187</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  }</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">188</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">189</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      </div>
+    </div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="diff-block">
+      <div class="diff-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m10 13-2 2 2 2"/><path d="m14 17 2-2-2-2"/></svg>
+        <span>/Users/prakharagarwal/ClineHackathon/src/events.ts</span>
+        <span class="badge">ts</span>
+        <span class="badge new-file">New File</span>
+        <div class="diff-stats">
+          <span class="added">+189</span>
+          
+        </div>
+      </div>
+      <div class="diff-content">
+        
+      <div class="diff-line added">
+        <div class="line-num">1</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">import path from &quot;node:path&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">2</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">import { extractCommands } from &quot;./allowlist&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">3</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">import type { RunResult } from &quot;./types&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">4</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">5</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">/**</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">6</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> * The server-side SSE filter.</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">7</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> *</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">8</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> * `GET /api/session/:id/stream` must NEVER leak unguarded model output to the</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">9</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> * browser. This module defines an explicit allow-list of event types (and a</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">10</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> * per-type sanitisation) that may reach a client. Every other event —</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">11</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> * including `agent_text`, `reasoning`, and any tool payload that carries the</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">12</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> * model&#039;s own free text — is dropped here.</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">13</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> *</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">14</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> * Raw events are still stored on the session (`session.events`) for</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">15</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> * server-side logging/debugging; this filter only governs what is written to</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">16</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> * an SSE client, for both live events and the replay of past events.</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">17</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> */</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">18</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">19</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">export interface ClientEvent {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">20</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  name: string;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">21</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  data: unknown;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">22</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">23</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">24</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function asRecord(data: unknown): Record&lt;string, unknown&gt; | null {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">25</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return typeof data === &quot;object&quot; &amp;&amp; data !== null &amp;&amp; !Array.isArray(data)</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">26</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    ? (data as Record&lt;string, unknown&gt;)</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">27</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    : null;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">28</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">29</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">30</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function stringField(data: unknown, key: string): string {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">31</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const rec = asRecord(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">32</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const v = rec?.[key];</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">33</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return typeof v === &quot;string&quot; ? v : &quot;&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">34</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">35</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">36</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function toolNameOf(data: unknown): string {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">37</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return stringField(data, &quot;toolName&quot;);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">38</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">39</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">40</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">/** Map a guard/level reason to a short, stable category (never the raw text). */</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">41</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function reasonCategory(reason: string): string {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">42</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  if (reason === &quot;wrong level&quot;) return &quot;wrong level&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">43</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  if (reason === &quot;empty hint&quot; || reason === &quot;empty&quot;) return &quot;empty&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">44</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  if (/code|fenced|source|inline|expression|solution|backtick/i.test(reason)) {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">45</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    return &quot;contained code&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">46</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  }</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">47</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return &quot;blocked&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">48</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">49</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">50</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">/** Turn a raw SDK/provider error into one short human line (no stack traces). */</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">51</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function friendlyError(data: unknown): ClientEvent {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">52</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const msg = stringField(data, &quot;message&quot;).toLowerCase();</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">53</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  let message: string;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">54</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  if (/(timeout|timed out|etimedout|abort)/.test(msg)) {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">55</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    message = &quot;Tutor timed out, try again&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">56</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  } else if (/(rate|quota|429|overload|capacity|busy|too many)/.test(msg)) {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">57</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    message = &quot;Tutor is busy, try again in a moment&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">58</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  } else if (/(auth|unauthorized|401|403|credential|key|token)/.test(msg)) {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">59</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    message = &quot;Tutor is unavailable, check the server&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">60</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  } else {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">61</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    message = &quot;Something went wrong, please try again&quot;;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">62</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  }</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">63</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return { name: &quot;error&quot;, data: { message } };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">64</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">65</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">66</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function fileOf(input: unknown): string | undefined {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">67</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const rec = asRecord(input);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">68</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  if (!rec) return undefined;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">69</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const p = typeof rec.path === &quot;string&quot; ? rec.path : typeof rec.file === &quot;string&quot; ? rec.file : undefined;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">70</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return p ? path.basename(p) : undefined;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">71</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">72</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">73</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">/** tool_call: only run_commands / read_files / run_tests, with command or file name. */</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">74</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function toolCall(data: unknown): ClientEvent | null {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">75</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const name = toolNameOf(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">76</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const input = asRecord(data)?.input;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">77</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  if (name === &quot;run_commands&quot;) {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">78</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    const command = extractCommands(input);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">79</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    return { name: &quot;tool_call&quot;, data: { toolName: &quot;run_commands&quot;, command } };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">80</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  }</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">81</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  if (name === &quot;read_files&quot;) {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">82</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    return { name: &quot;tool_call&quot;, data: { toolName: &quot;read_files&quot;, file: fileOf(input) } };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">83</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  }</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">84</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  if (name === &quot;run_tests&quot;) {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">85</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    const test = asRecord(input)?.test;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">86</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    return { name: &quot;tool_call&quot;, data: { toolName: &quot;run_tests&quot;, test: typeof test === &quot;string&quot; ? test : undefined } };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">87</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  }</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">88</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  // give_hint / search_codebase / anything else may carry model text — drop.</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">89</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return null;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">90</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">91</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">92</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function shortSummary(output: unknown): string {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">93</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const s = typeof output === &quot;string&quot; ? output : JSON.stringify(output ?? &quot;&quot;);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">94</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const trimmed = s.replace(/\s+/g, &quot; &quot;).trim();</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">95</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return trimmed.length &gt; 200 ? `${trimmed.slice(0, 200)}…` : trimmed;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">96</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">97</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">98</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">/** tool_result: a short trimmed summary; never the model&#039;s own text. */</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">99</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function toolResult(data: unknown): ClientEvent | null {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">100</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const name = toolNameOf(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">101</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const output = asRecord(data)?.output;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">102</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  if (name === &quot;run_commands&quot;) {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">103</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    return { name: &quot;tool_result&quot;, data: { toolName: &quot;run_commands&quot;, summary: shortSummary(output) } };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">104</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  }</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">105</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  if (name === &quot;run_tests&quot;) {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">106</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    const o = asRecord(output);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">107</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    const total = typeof o?.total === &quot;number&quot; ? o.total : undefined;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">108</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    const passed = typeof o?.passed === &quot;number&quot; ? o.passed : undefined;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">109</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    const failed = typeof o?.failed === &quot;number&quot; ? o.failed : undefined;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">110</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    const summary = total === undefined ? &quot;ran tests&quot; : `${total} test(s), ${passed ?? 0} passed, ${failed ?? 0} failed`;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">111</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    return { name: &quot;tool_result&quot;, data: { toolName: &quot;run_tests&quot;, summary } };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">112</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  }</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">113</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  // read_files result is student file content; give_hint result is model-adjacent. Drop.</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">114</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return null;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">115</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">116</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">117</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function approval(data: unknown): ClientEvent {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">118</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const rec = asRecord(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">119</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const commands = extractCommands(rec?.commands);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">120</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">121</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    name: &quot;approval&quot;,</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">122</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    data: { allowed: rec?.allowed === true, commands, toolName: stringField(data, &quot;toolName&quot;) },</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">123</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">124</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">125</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">126</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function hint(data: unknown): ClientEvent {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">127</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return { name: &quot;hint&quot;, data };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">128</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">129</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">130</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function hintRejected(data: unknown): ClientEvent {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">131</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const rec = asRecord(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">132</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const level = typeof rec?.level === &quot;number&quot; ? rec.level : undefined;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">133</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const reason = stringField(data, &quot;reason&quot;);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">134</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return { name: &quot;hint_rejected&quot;, data: { level, reason: reasonCategory(reason) } };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">135</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">136</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">137</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function status(data: unknown): ClientEvent {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">138</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const rec = asRecord(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">139</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  // SDK &quot;notice&quot; events carry a free-form message; keep only the notice type.</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">140</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  if (rec &amp;&amp; &quot;noticeType&quot; in rec &amp;&amp; &quot;message&quot; in rec) {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">141</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    const { message: _message, ...rest } = rec;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">142</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    return { name: &quot;status&quot;, data: rest };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">143</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  }</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">144</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return { name: &quot;status&quot;, data };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">145</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">146</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">147</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function testResults(data: unknown): ClientEvent {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">148</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const r = data as RunResult;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">149</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const { sandboxDir: _sandboxDir, ...rest } = r;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">150</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return { name: &quot;test_results&quot;, data: rest };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">151</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">152</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">153</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">function done(data: unknown): ClientEvent {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">154</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  const reason = stringField(data, &quot;reason&quot;);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">155</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  // `done` also carries the model&#039;s final text — never send it.</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">156</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  return { name: &quot;done&quot;, data: { reason: reason || undefined } };</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">157</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">158</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">159</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">/**</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">160</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> * Map a raw server event to the client-safe event that may be streamed, or</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">161</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> * `null` when the event type is not on the client allow-list.</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">162</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> */</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">163</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">export function toClientEvent(name: string, data: unknown): ClientEvent | null {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">164</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  switch (name) {</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">165</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    case &quot;test_results&quot;:</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">166</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">      return testResults(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">167</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    case &quot;tool_call&quot;:</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">168</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">      return toolCall(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">169</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    case &quot;tool_result&quot;:</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">170</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">      return toolResult(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">171</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    case &quot;approval&quot;:</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">172</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">      return approval(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">173</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    case &quot;hint&quot;:</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">174</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">      return hint(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">175</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    case &quot;hint_status&quot;:</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">176</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    case &quot;hint_rejected&quot;:</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">177</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">      return hintRejected(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">178</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    case &quot;status&quot;:</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">179</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">      return status(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">180</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    case &quot;error&quot;:</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">181</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">      return friendlyError(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">182</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    case &quot;done&quot;:</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">183</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">      return done(data);</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">184</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">    default:</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">185</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">      // agent_text, reasoning, and anything not explicitly allow-listed.</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">186</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">      return null;</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">187</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">  }</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">188</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">}</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">189</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added"> </div>
+      </div>
+      </div>
+    </div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        <div>I&#039;ll create the file in two parts using insert at EOF.</div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        <div>Upstream stream ended before terminal chunk</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Dots Navigation Bar -->
+  <nav class="dots-nav">
+    <button class="dots-nav-btn" onclick="scrollToMessage(0)" title="Scroll to top">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+    </button>
+    <div class="dots-container">
+      
+        <div class="dot user" data-index="0" onclick="scrollToMessage(0)" title="Message 1: user"></div>
+      
+        <div class="dot assistant" data-index="1" onclick="scrollToMessage(1)" title="Message 2: assistant"></div>
+      
+        <div class="dot assistant" data-index="2" onclick="scrollToMessage(2)" title="Message 3: assistant"></div>
+      
+        <div class="dot assistant" data-index="3" onclick="scrollToMessage(3)" title="Message 4: assistant"></div>
+      
+        <div class="dot assistant" data-index="4" onclick="scrollToMessage(4)" title="Message 5: assistant"></div>
+      
+        <div class="dot assistant" data-index="5" onclick="scrollToMessage(5)" title="Message 6: assistant"></div>
+      
+        <div class="dot assistant" data-index="6" onclick="scrollToMessage(6)" title="Message 7: assistant"></div>
+      
+        <div class="dot assistant" data-index="7" onclick="scrollToMessage(7)" title="Message 8: assistant"></div>
+      
+        <div class="dot assistant" data-index="8" onclick="scrollToMessage(8)" title="Message 9: assistant"></div>
+      
+        <div class="dot assistant" data-index="9" onclick="scrollToMessage(9)" title="Message 10: assistant"></div>
+      
+        <div class="dot assistant" data-index="10" onclick="scrollToMessage(10)" title="Message 11: assistant"></div>
+      
+        <div class="dot assistant" data-index="11" onclick="scrollToMessage(11)" title="Message 12: assistant"></div>
+      
+        <div class="dot assistant" data-index="12" onclick="scrollToMessage(12)" title="Message 13: assistant"></div>
+      
+        <div class="dot assistant" data-index="13" onclick="scrollToMessage(13)" title="Message 14: assistant"></div>
+      
+        <div class="dot assistant" data-index="14" onclick="scrollToMessage(14)" title="Message 15: assistant"></div>
+      
+        <div class="dot assistant" data-index="15" onclick="scrollToMessage(15)" title="Message 16: assistant"></div>
+      
+        <div class="dot assistant" data-index="16" onclick="scrollToMessage(16)" title="Message 17: assistant"></div>
+      
+        <div class="dot assistant" data-index="17" onclick="scrollToMessage(17)" title="Message 18: assistant"></div>
+      
+        <div class="dot assistant" data-index="18" onclick="scrollToMessage(18)" title="Message 19: assistant"></div>
+      
+        <div class="dot assistant" data-index="19" onclick="scrollToMessage(19)" title="Message 20: assistant"></div>
+      
+        <div class="dot assistant" data-index="20" onclick="scrollToMessage(20)" title="Message 21: assistant"></div>
+      
+        <div class="dot assistant" data-index="21" onclick="scrollToMessage(21)" title="Message 22: assistant"></div>
+      
+        <div class="dot assistant" data-index="22" onclick="scrollToMessage(22)" title="Message 23: assistant"></div>
+      
+        <div class="dot assistant" data-index="23" onclick="scrollToMessage(23)" title="Message 24: assistant"></div>
+      
+        <div class="dot assistant" data-index="24" onclick="scrollToMessage(24)" title="Message 25: assistant"></div>
+      
+        <div class="dot assistant" data-index="25" onclick="scrollToMessage(25)" title="Message 26: assistant"></div>
+      
+    </div>
+    <button class="dots-nav-btn" onclick="scrollToMessage(25)" title="Scroll to bottom">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+  </nav>
+  
+  <script>
+    let currentIndex = 0;
+    const messages = document.querySelectorAll('.message');
+    const dots = document.querySelectorAll('.dot');
+    
+    function scrollToMessage(index) {
+      if (index >= 0 && index < messages.length) {
+        messages[index].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        updateActiveDot(index);
+      }
+    }
+    
+    function updateActiveDot(index) {
+      dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === index);
+      });
+      currentIndex = index;
+    }
+    
+    // Track scroll position to update active dot
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const index = Array.from(messages).indexOf(entry.target);
+          if (index !== -1) {
+            updateActiveDot(index);
+          }
+        }
+      });
+    }, { threshold: 0.5, rootMargin: '-80px 0px -50% 0px' });
+    
+    messages.forEach(msg => observer.observe(msg));
+    
+    // Initialize first dot as active
+    if (dots.length > 0) {
+      dots[0].classList.add('active');
+    }
+  </script>
+</body>
+</html>

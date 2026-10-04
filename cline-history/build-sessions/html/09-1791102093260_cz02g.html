@@ -1,0 +1,2084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1791102093260_cz02g - Conversation Export</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #09090b;
+      color: #fafafa;
+      line-height: 1.6;
+    }
+
+    html,
+    body,
+    .content pre,
+    .tool-content,
+    .line-content,
+    .dots-container {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar,
+    .content pre::-webkit-scrollbar,
+    .tool-content::-webkit-scrollbar,
+    .line-content::-webkit-scrollbar,
+    .dots-container::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+    
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(9, 9, 11, 0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid #27272a;
+      padding: 1rem 1.5rem;
+    }
+    
+    .header-content {
+      max-width: 56rem;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    
+    .stats {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      color: #a1a1aa;
+    }
+    
+    .stat svg {
+      width: 1rem;
+      height: 1rem;
+    }
+    
+    .messages {
+      max-width: 56rem;
+      margin: 0 auto;
+    }
+    
+    .message {
+      padding: 1.5rem;
+      border-bottom: 1px solid #18181b;
+    }
+    
+    .message.user {
+      background: rgba(39, 39, 42, 0.3);
+    }
+    
+    .message-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    
+    .avatar {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    
+    .avatar.user {
+      background: #3b82f6;
+      color: white;
+    }
+    
+    .avatar.assistant {
+      background: #27272a;
+      color: #a1a1aa;
+    }
+    
+    .role {
+      font-weight: 500;
+      font-size: 0.875rem;
+    }
+    
+    .model {
+      font-size: 0.75rem;
+      color: #71717a;
+      font-family: ui-monospace, monospace;
+    }
+    
+    .content {
+      padding-left: 2.75rem;
+    }
+    
+    .content p {
+      margin-bottom: 0.5rem;
+    }
+    
+    .content pre {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      overflow-x: auto;
+      font-family: ui-monospace, monospace;
+      font-size: 0.875rem;
+      margin: 0.75rem 0;
+    }
+    
+    .content code {
+      font-family: ui-monospace, monospace;
+      background: #27272a;
+      padding: 0.125rem 0.25rem;
+      border-radius: 0.25rem;
+      font-size: 0.875rem;
+    }
+    
+    .content pre code {
+      background: transparent;
+      padding: 0;
+    }
+    
+    .tool-block {
+      margin: 0.75rem 0;
+      border: 1px solid #27272a;
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+    
+    .tool-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: #18181b;
+      font-family: ui-monospace, monospace;
+      font-size: 0.875rem;
+    }
+    
+    .tool-header svg {
+      width: 1rem;
+      height: 1rem;
+      color: #71717a;
+    }
+    
+    .tool-content {
+      padding: 1rem;
+      font-family: ui-monospace, monospace;
+      font-size: 0.75rem;
+      background: #09090b;
+      white-space: pre-wrap;
+      word-break: break-all;
+      overflow: auto;
+    }
+    
+    .diff-block {
+      margin: 0.75rem 0;
+      border: 1px solid #27272a;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      background: #09090b;
+    }
+    
+    .diff-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1rem;
+      background: #18181b;
+      border-bottom: 1px solid #27272a;
+      font-family: ui-monospace, monospace;
+      font-size: 0.875rem;
+    }
+    
+    .diff-header svg {
+      width: 1rem;
+      height: 1rem;
+      color: #71717a;
+    }
+    
+    .diff-stats {
+      margin-left: auto;
+      display: flex;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+    }
+    
+    .diff-stats .added {
+      color: #4ade80;
+    }
+    
+    .diff-stats .removed {
+      color: #f87171;
+    }
+    
+    .diff-content {
+      font-family: ui-monospace, monospace;
+      font-size: 0.75rem;
+    }
+    
+    .diff-line {
+      display: flex;
+      border-bottom: 1px solid #18181b;
+    }
+    
+    .diff-line:last-child {
+      border-bottom: none;
+    }
+    
+    .diff-line.added {
+      background: rgba(74, 222, 128, 0.1);
+    }
+    
+    .diff-line.removed {
+      background: rgba(248, 113, 113, 0.1);
+    }
+    
+    .line-num {
+      width: 3rem;
+      padding: 0.125rem 0.5rem;
+      text-align: right;
+      color: #52525b;
+      border-right: 1px solid #27272a;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    
+    .line-indicator {
+      width: 1.5rem;
+      padding: 0.125rem 0.25rem;
+      text-align: center;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    
+    .line-indicator.added {
+      color: #4ade80;
+      font-weight: bold;
+    }
+    
+    .line-indicator.removed {
+      color: #f87171;
+      font-weight: bold;
+    }
+    
+    .line-content {
+      padding: 0.125rem 0.75rem;
+      white-space: pre;
+      overflow-x: auto;
+      flex: 1;
+    }
+    
+    .line-content.added {
+      color: #86efac;
+    }
+    
+    .line-content.removed {
+      color: #fca5a5;
+    }
+    
+    .badge {
+      font-size: 0.625rem;
+      padding: 0.125rem 0.375rem;
+      border-radius: 0.25rem;
+      background: #27272a;
+      color: #71717a;
+    }
+    
+    .badge.new-file {
+      background: rgba(74, 222, 128, 0.2);
+      color: #4ade80;
+    }
+    
+    .error {
+      color: #f87171;
+    }
+    
+    .success {
+      color: #4ade80;
+    }
+    
+    .file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      margin: 0.5rem 0;
+    }
+    
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.375rem 0.75rem;
+      background: #18181b;
+      border-radius: 0.375rem;
+      font-family: ui-monospace, monospace;
+      font-size: 0.75rem;
+      color: #a1a1aa;
+    }
+    
+    .command-block {
+      margin: 0.5rem 0;
+      padding: 0.75rem 1rem;
+      background: #18181b;
+      border-radius: 0.5rem;
+      font-family: ui-monospace, monospace;
+      font-size: 0.75rem;
+    }
+    
+    .command-label {
+      font-size: 0.625rem;
+      color: #71717a;
+      margin-bottom: 0.25rem;
+    }
+    
+    .dots-nav {
+      position: fixed;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    
+    .dots-nav-btn {
+      padding: 0.375rem;
+      border-radius: 0.5rem;
+      background: #27272a;
+      border: 1px solid #3f3f46;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .dots-nav-btn:hover {
+      background: #3f3f46;
+    }
+    
+    .dots-nav-btn svg {
+      width: 0.75rem;
+      height: 0.75rem;
+      color: #a1a1aa;
+    }
+    
+    .dots-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      background: #27272a;
+      border: 1px solid #3f3f46;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+    
+    .dot {
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    
+    .dot.user {
+      background: rgba(59, 130, 246, 0.4);
+    }
+    
+    .dot.user:hover {
+      background: rgba(59, 130, 246, 0.6);
+    }
+    
+    .dot.assistant {
+      background: rgba(161, 161, 170, 0.4);
+    }
+    
+    .dot.assistant:hover {
+      background: rgba(161, 161, 170, 0.6);
+    }
+    
+    .dot.active {
+      background: #3b82f6;
+      transform: scale(1.25);
+    }
+    
+    @media (max-width: 1024px) {
+      .dots-nav {
+        display: none;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .stats {
+        gap: 1rem;
+      }
+      
+      .content {
+        padding-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-content">
+      <div class="stats">
+        <div class="stat">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+          <span>44 messages</span>
+        </div>
+        
+        
+        <div class="stat">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/></svg>
+          <span>3,492,204 tokens</span>
+        </div>
+        
+        
+        <div class="stat">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>10/4/2026, 1:59:02 PM</span>
+        </div>
+        
+      </div>
+    </div>
+  </header>
+  
+  <div class="messages">
+    
+    <div class="message user">
+      <div class="message-header">
+        <div class="avatar user">
+          U
+        </div>
+        <span class="role">User</span>
+        
+      </div>
+      <div class="content">
+        <div>Rewrite README.md for HintLab in this repo (/Users/prakharagarwal/ClineHackathon) so that hackathon judges can install, configure, run and verify the project from the README alone, on both Linux and macOS. Read the actual code (package.json, src/, scripts/, web/, assignments/, tsconfig.json, PLAN.md) and describe what is really there; do not invent features, commands or env vars. Do not modify any code. Only README.md may change (you may add a short .env.example only if the code really reads those variables), with one approved exception under cline-proof/ described in item 12; do not touch anything else under cline-proof/.<br><br>The README must include:<br>1. What HintLab is (one paragraph) and the safety promise: the tutor diagnoses and gives tiered hints but never writes the fix.<br>2. Prerequisites with exact versions and how to check/install them on macOS (Homebrew or Xcode Command Line Tools) and on Linux (Debian/Ubuntu apt, and a note for Fedora/dnf): Node.js 22 or newer (the Cline SDK requires it; npm included), python3, and a C compiler (gcc, or Apple clang via the gcc/cc shim on macOS), git. Mention any other tool the code or checks call (check the scripts, e.g. ps, lsof, curl).<br>3. ClinePass / provider setup: how to install the Cline CLI, how to authenticate it with ClinePass so that credentials land in ~/.cline (the exact CLI command(s) that exist in the installed CLI version; check its help output), how the server&#039;s Cline SDK picks those credentials up from ~/.cline with no API key in the repo, and how to use another provider instead if the code supports it. Never include any real token or secret.<br>4. Every environment variable the code reads (search the source for process.env), with default, meaning and example: e.g. PORT, HINTLAB_PROVIDER_ID, HINTLAB_MODEL_ID, timeouts, and any others actually present.<br>5. Install and run: clone, npm install, start (npm start and npm run dev), the URL to open, and a short demo walkthrough (pick an assignment, run, read the failing tests, watch the live feed, get hints at levels 1, 2 and 3, &quot;all hints given&quot;).<br>6. Every npm script with what it does, and how to run the checks (typecheck, test:runner, check:agent, check:web, build) including which ones make real model calls, how long they take and what a pass looks like.<br>7. API reference: each endpoint, request body, response shape, status codes, and the SSE event types that reach the client (and the fact that model free text and reasoning are filtered out on the server).<br>8. Architecture: a diagram in text plus explanation of how the Cline SDK is used: ClineCore created once in local backend mode, start with interactive sessions and send for the next hint, toolPolicies disabling edit/write/network tools, requestToolApproval enforcing the run_commands allow-list (list the allowed command forms), the give_hint custom tool built with createTool and zod and passed through extraTools, subscribe events mapped to SSE, the server-side hint guard, and the sandboxed runner (temp dir per run, timeouts, process-group kill, minimal env, signal reporting, cleanup). Include the SDK quirks: Node 22+, moduleResolution Bundler, absolute paths for read_files, interactive start needed for send, run_commands runs on the host so the allow-list is the only protection.<br>9. Assignments: the format of assignments/&lt;id&gt;/tests.json and how to add a new assignment.<br>10. Troubleshooting: common failures (Node too old, missing gcc/python3, port in use, ClinePass not logged in or expired, model timeouts) and how to fix them.<br>11. Project layout tree and a short &quot;How this was built&quot; note: all code was written by the Cline CLI from the prompts in cline-proof/prompts, with session logs in cline-proof/sessions.<br><br>12. Repo cleanup and disclosure (approved by Prakhar): remove the folder cline-proof/reference/sdk-check/ from the repo using git rm -r on that folder (it stays in git history, which is fine; do not commit, I will commit). Keep cline-proof/reference/fixtures/ (the sample buggy programs are test data). Make sure nothing in the app, scripts, tsconfig or package.json references sdk-check (check with a search; if something does, report it rather than changing code). In the README add a short &quot;Disclosure&quot; section stating: example Cline SDK snippets were prepared before the sprint and used only as reference material for Cline; they were never imported by the app and were removed from the repo during the sprint; all app code was written by Cline during the sprint, as shown in cline-proof/ (prompts and session logs) and the Cline session history. Also state where the fixtures came from: the three sample buggy programs and their tests.json files in cline-proof/reference/fixtures/ were prepared before the sprint as test data, and were copied unchanged into assignments/.<br><br>Verify the README against reality before finishing: run every command it lists that is safe and quick (npm install, npm run typecheck, npm run test:runner, the CLI help for the auth command, and start the server on PORT=3200 and curl the health endpoint, then stop it by PID). Another tester may be using PORT=3100: never kill, signal or bind to processes on 3100, no broad pkill patterns. Do not run the real-model checks again unless needed. Report what you verified and anything in the README that you could not verify.</div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="message-header">
+        <div class="avatar assistant">
+          A
+        </div>
+        <span class="role">Assistant</span>
+        <span class="model">cline-pass/deepseek-v4-pro</span>
+      </div>
+      <div class="content">
+        
+<div>I&#039;ll start by exploring the repository structure and reading the key files to understand what&#039;s actually there.</div>
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; ls -la &amp;&amp; echo &#039;---GIT STATUS---&#039; &amp;&amp; git status &amp;&amp; echo &#039;---GIT LOG---&#039; &amp;&amp; git --no-pager log --oneline -10</code>
+    </div>
+  
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/README.md&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/package.json&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/tsconfig.json&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/PLAN.md&quot;
+    }
+  ]
+}</div>
+    </div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>Let me read the full README, source files, and scripts.</div>
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/README.md&quot;,
+      &quot;start_line&quot;: 80,
+      &quot;end_line&quot;: 200
+    }
+  ]
+}</div>
+    </div>
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== SRC ===&#039; &amp;&amp; ls -la src &amp;&amp; echo &#039;=== SCRIPTS ===&#039; &amp;&amp; ls -la scripts &amp;&amp; echo &#039;=== WEB ===&#039; &amp;&amp; ls -la web &amp;&amp; echo &#039;=== ASSIGNMENTS ===&#039; &amp;&amp; find assignments -type f &amp;&amp; echo &#039;=== CLINE-PROOF ===&#039; &amp;&amp; find cline-proof -type f | sort</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>Now let me read all the source files in detail.</div>
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/server.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/config.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/app.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/agent.ts&quot;
+    }
+  ]
+}</div>
+    </div>
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/types.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/assignments.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/allowlist.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/hintGuard.ts&quot;
+    }
+  ]
+}</div>
+    </div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>Let me read the rest of agent.ts and the remaining source files.</div>
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/agent.ts&quot;,
+      &quot;start_line&quot;: 80,
+      &quot;end_line&quot;: 340
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/runner.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/sessions.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/sse.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/eventFilter.ts&quot;
+    }
+  ]
+}</div>
+    </div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>Let me read the remaining truncated sections of agent.ts, runner.ts, and eventFilter.ts.</div>
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;end_line&quot;: 252,
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/agent.ts&quot;,
+      &quot;start_line&quot;: 162
+    },
+    {
+      &quot;end_line&quot;: 292,
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/runner.ts&quot;,
+      &quot;start_line&quot;: 112
+    },
+    {
+      &quot;end_line&quot;: 183,
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/src/eventFilter.ts&quot;,
+      &quot;start_line&quot;: 106
+    }
+  ]
+}</div>
+    </div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>Now let me read the scripts, assignments, and web files.</div>
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/scripts/check-runner.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/scripts/check-agent.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/scripts/check-web.ts&quot;
+    }
+  ]
+}</div>
+    </div>
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/assignments/sum-of-list/tests.json&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/assignments/sum-of-list/main.py&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/assignments/is-palindrome/tests.json&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/assignments/is-palindrome/main.py&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/assignments/average-marks/tests.json&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/assignments/average-marks/main.c&quot;
+    }
+  ]
+}</div>
+    </div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>Let me read the web files, .gitignore, sdk-check reference, and check the Cline CLI help.</div>
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/web/index.html&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/web/app.js&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/.gitignore&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/reference/sdk-check/README.md&quot;
+    }
+  ]
+}</div>
+    </div>
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== node ===&#039; &amp;&amp; node --version &amp;&amp; echo &#039;=== npm ===&#039; &amp;&amp; npm --version &amp;&amp; echo &#039;=== python3 ===&#039; &amp;&amp; python3 --version &amp;&amp; echo &#039;=== gcc ===&#039; &amp;&amp; gcc --version 2&gt;&amp;1 | head -1 &amp;&amp; echo &#039;=== cc ===&#039; &amp;&amp; cc --version 2&gt;&amp;1 | head -1 &amp;&amp; echo &#039;=== cline cli ===&#039; &amp;&amp; which cline 2&gt;&amp;1 || echo &#039;cline not found on PATH&#039;</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 2</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== search process.env ===&#039; &amp;&amp; grep -rn &#039;process\.env&#039; src scripts | sort -u</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 3</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== search sdk-check references ===&#039; &amp;&amp; grep -rn &#039;sdk-check&#039; . --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=cline-proof 2&gt;/dev/null || echo &#039;no sdk-check references outside cline-proof&#039;</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>Let me check the Cline CLI help output and the SDK package structure.</div>
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== cline --help ===&#039; &amp;&amp; cline --help 2&gt;&amp;1 | head -80</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 2</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== cline --version ===&#039; &amp;&amp; cline --version 2&gt;&amp;1 | head -5</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 3</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== sdk package ===&#039; &amp;&amp; ls -la node_modules/@cline/sdk &amp;&amp; echo &#039;=== sdk package.json ===&#039; &amp;&amp; cat node_modules/@cline/sdk/package.json 2&gt;/dev/null | head -80</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>Let me check the CLI auth command help and the SDK type definitions.</div>
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== cline auth --help ===&#039; &amp;&amp; cline auth --help 2&gt;&amp;1 | head -60 &amp;&amp; echo &#039;=== cline config --help ===&#039; &amp;&amp; cline config --help 2&gt;&amp;1 | head -40 &amp;&amp; echo &#039;=== cline doctor --help ===&#039; &amp;&amp; cline doctor --help 2&gt;&amp;1 | head -40</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== sdk index.d.ts ===&#039; &amp;&amp; cat node_modules/@cline/sdk/dist/index.d.ts 2&gt;/dev/null | head -120</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>Let me examine the SDK core package to understand <code>ClineCore</code>, <code>backendMode</code>, and ClinePass.</div>
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== core package.json ===&#039; &amp;&amp; cat node_modules/@cline/core/package.json 2&gt;/dev/null | head -40 &amp;&amp; echo &#039;=== search cline-pass in core ===&#039; &amp;&amp; grep -rln &#039;cline-pass&#039; node_modules/@cline/core/dist 2&gt;/dev/null | head -20</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== ~/.cline tree ===&#039; &amp;&amp; ls -la ~/.cline 2&gt;/dev/null &amp;&amp; echo &#039;=== ~/.cline/data ===&#039; &amp;&amp; ls -la ~/.cline/data 2&gt;/dev/null &amp;&amp; echo &#039;=== settings ===&#039; &amp;&amp; ls -la ~/.cline/data/settings 2&gt;/dev/null &amp;&amp; echo &#039;=== providers.json keys only (redacted) ===&#039; &amp;&amp; node -e &quot;try{const p=require(&#039;os&#039;).homedir()+&#039;/.cline/data/settings/providers.json&#039;;const j=JSON.parse(require(&#039;fs&#039;).readFileSync(p,&#039;utf8&#039;));console.log(Object.keys(j));for(const k of Object.keys(j)){const v=j[k];console.log(k, &#039;-&gt;&#039;, typeof v===&#039;object&#039;&amp;&amp;v!==null?Object.keys(v):typeof v)}}catch(e){console.log(&#039;providers.json read error:&#039;, e.message)}&quot;</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; node -e &quot;const fs=require(&#039;fs&#039;);const os=require(&#039;os&#039;);const p=os.homedir()+&#039;/.cline/data/settings/providers.json&#039;;const j=JSON.parse(fs.readFileSync(p,&#039;utf8&#039;));console.log(&#039;lastUsedProvider:&#039;, j.lastUsedProvider);const cp=j.providers[&#039;cline-pass&#039;];console.log(&#039;cline-pass keys:&#039;, cp?Object.keys(cp):&#039;none&#039;);if(cp){console.log(&#039;cline-pass.id:&#039;, cp.id);console.log(&#039;cline-pass.settings keys:&#039;, cp.settings?Object.keys(cp.settings):&#039;none&#039;);if(cp.settings){console.log(&#039;cline-pass.settings.auth keys:&#039;, cp.settings.auth?Object.keys(cp.settings.auth):&#039;none&#039;);console.log(&#039;cline-pass.settings.models present?&#039;, cp.settings.models?&#039;yes&#039;:&#039;no&#039;)}}&quot;</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== cline-pass in cloud/models.d.ts ===&#039; &amp;&amp; grep -n &#039;cline-pass&#039; node_modules/@cline/core/dist/cloud/models.d.ts | head -20 &amp;&amp; echo &#039;=== backendMode / ClineCore create signature ===&#039; &amp;&amp; grep -rn &#039;backendMode&#039; node_modules/@cline/core/dist/index.d.ts | head -20</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== core index.d.ts ===&#039; &amp;&amp; cat node_modules/@cline/core/dist/index.d.ts 2&gt;/dev/null</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 2</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== search backendMode ===&#039; &amp;&amp; grep -rn &#039;backendMode&#039; node_modules/@cline/core/dist/*.d.ts node_modules/@cline/core/dist/**/*.d.ts 2&gt;/dev/null | head -20</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/node_modules/@cline/core/dist/ClineCore.d.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/node_modules/@cline/core/dist/cline-core/types.d.ts&quot;
+    }
+  ]
+}</div>
+    </div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;end_line&quot;: 250,
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/node_modules/@cline/core/dist/ClineCore.d.ts&quot;,
+      &quot;start_line&quot;: 60
+    }
+  ]
+}</div>
+    </div>
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== ClinePass login exports ===&#039; &amp;&amp; grep -rn &#039;ClinePass&#039; node_modules/@cline/core/dist/auth/*.d.ts node_modules/@cline/llms/dist/*.d.ts 2&gt;/dev/null | head -40</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== auth dir listing ===&#039; &amp;&amp; ls node_modules/@cline/core/dist/auth/ &amp;&amp; echo &#039;=== grep loginClinePass / ClinePass in core auth ===&#039; &amp;&amp; grep -rn &#039;ClinePass|loginClinePass|clinePass|cline-pass&#039; node_modules/@cline/core/dist/auth/ 2&gt;/dev/null | head -30</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== cline auth provider list / how cline-pass auth works ===&#039; &amp;&amp; grep -rn &#039;cline-pass|ClinePass&#039; node_modules/@cline/core/dist/cli/*.js 2&gt;/dev/null | head -20; echo &#039;---try cline auth with no args (dry, non-interactive?)---&#039;; echo &#039;skip interactive auth&#039;</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== auth/cline.d.ts ===&#039; &amp;&amp; cat node_modules/@cline/core/dist/auth/cline.d.ts &amp;&amp; echo &#039;=== auth/provider-auth-registry.d.ts ===&#039; &amp;&amp; cat node_modules/@cline/core/dist/auth/provider-auth-registry.d.ts 2&gt;/dev/null | head -80</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; node -e &quot;const fs=require(&#039;fs&#039;);const os=require(&#039;os&#039;);const j=JSON.parse(fs.readFileSync(os.homedir()+&#039;/.cline/data/settings/providers.json&#039;,&#039;utf8&#039;));const cp=j.providers[&#039;cline-pass&#039;];console.log(&#039;cline-pass.settings.provider:&#039;, JSON.stringify(cp.settings.provider));console.log(&#039;cline-pass.settings.model:&#039;, JSON.stringify(cp.settings.model));console.log(&#039;cline-pass.settings.reasoning:&#039;, JSON.stringify(cp.settings.reasoning));console.log(&#039;tokenSource:&#039;, cp.tokenSource)&quot;</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== interactive field in config types ===&#039; &amp;&amp; grep -rn &#039;interactive&#039; node_modules/@cline/core/dist/types/config.d.ts node_modules/@cline/core/dist/runtime/host/*.d.ts 2&gt;/dev/null | head -20</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; sed -n &#039;50,110p&#039; node_modules/@cline/core/dist/runtime/host/runtime-host.d.ts &amp;&amp; echo &#039;=== LocalRuntimeStartOptions ===&#039; &amp;&amp; sed -n &#039;1,80p&#039; node_modules/@cline/core/dist/runtime/host/local-runtime-host.d.ts</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;end_line&quot;: 220,
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/PLAN.md&quot;,
+      &quot;start_line&quot;: 60
+    }
+  ]
+}</div>
+    </div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;end_line&quot;: 250,
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/scripts/check-agent.ts&quot;,
+      &quot;start_line&quot;: 59
+    },
+    {
+      &quot;end_line&quot;: 210,
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/scripts/check-runner.ts&quot;,
+      &quot;start_line&quot;: 100
+    }
+  ]
+}</div>
+    </div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;end_line&quot;: 175,
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/scripts/check-agent.ts&quot;,
+      &quot;start_line&quot;: 114
+    }
+  ]
+}</div>
+    </div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;end_line&quot;: 345,
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/web/app.js&quot;,
+      &quot;start_line&quot;: 120
+    }
+  ]
+}</div>
+    </div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; sed -n &#039;120,345p&#039; web/app.js</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; sed -n &#039;162,252p&#039; src/agent.ts</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; sed -n &#039;112,292p&#039; src/runner.ts</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; sed -n &#039;252,340p&#039; src/agent.ts</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; sed -n &#039;80,162p&#039; src/agent.ts</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== check-agent e2e key lines ===&#039; &amp;&amp; grep -n &#039;sum-of-list\|is-palindrome\|average-marks\|level 2\|level 3\|next-hint\|/api/session\|readSse\|testResults&#039; scripts/check-agent.ts | head -40</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== check-runner key lines ===&#039; &amp;&amp; grep -n &#039;baselineDirs\|pgrep\|sleep\|proc-group\|subprocess\|waitUntilNoPids\|build-fail\|compile\|infinite\|while True&#039; scripts/check-runner.ts | head -40</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== global npm cline package ===&#039; &amp;&amp; npm ls -g --depth=0 2&gt;/dev/null | head -30</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 2</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== installed versions ===&#039; &amp;&amp; node -e &quot;const p=(n)=&gt;{try{return require(n+&#039;/package.json&#039;).version}catch(e){return &#039;n/a&#039;}};console.log(&#039;typescript&#039;, p(&#039;typescript&#039;));console.log(&#039;tsx&#039;, p(&#039;tsx&#039;));console.log(&#039;express&#039;, p(&#039;express&#039;));console.log(&#039;zod&#039;, p(&#039;zod&#039;));console.log(&#039;@cline/sdk&#039;, p(&#039;@cline/sdk&#039;));console.log(&#039;@cline/core&#039;, p(&#039;@cline/core&#039;))&quot;</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== PLAN.md quirk table ===&#039; &amp;&amp; sed -n &#039;60,150p&#039; PLAN.md</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; sed -n &#039;88,183p&#039; src/eventFilter.ts</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== tools called by scripts ===&#039; &amp;&amp; grep -rnE &quot;execFileSync|execSync|spawn\(|pgrep|lsof|ps -|curl|node |gcc|python3&quot; scripts/ src/ | grep -v &#039;//&#039; | grep -viE &#039;import|from&#039; | head -60</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== full sdk-check reference search (repo-wide, excluding node_modules/.git) ===&#039; &amp;&amp; grep -rn &#039;sdk-check&#039; . --exclude-dir=node_modules --exclude-dir=.git 2&gt;/dev/null</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>Let me verify a couple of remaining details before writing: whether <code>hint_status</code> is actually emitted, and the exact response shape of <code>next-hint</code>.</div>
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== hint_status usage ===&#039; &amp;&amp; grep -rn &#039;hint_status&#039; src/ web/ scripts/ &amp;&amp; echo &#039;=== emitEvent calls in agent.ts ===&#039; &amp;&amp; grep -n &#039;emitEvent\|recordHint&#039; src/agent.ts</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>I now have a complete and verified picture of the codebase. Let me perform the repo cleanup (item 12) and write the new README.</div>
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; git rm -r cline-proof/reference/sdk-check/ &amp;&amp; echo &#039;--- remaining cline-proof/reference ---&#039; &amp;&amp; find cline-proof/reference -type f | sort &amp;&amp; echo &#039;--- git status (short) ---&#039; &amp;&amp; git --no-pager status --short | head -40</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>Now I&#039;ll write the new README. I&#039;ll write it in chunks using a heredoc.</div>
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; cat &gt; README.md &lt;&lt;&#039;HL_EOF&#039;
+# HintLab
+
+HintLab is a debugging tutor for programming labs. A student picks an assignment (or
+pastes their own program), the server runs the code against the assignment&#039;s test cases
+in a sandboxed temporary directory, and then a Cline-SDK agent diagnoses the failures
+and delivers **tiered hints** — level 1 (a conceptual nudge), level 2 (where to look),
+level 3 (the underlying concept) — streamed live to the browser. It is an Express +
+TypeScript server (ESM, run via `tsx`), a vanilla-JS web UI (no build step), and an agent
+built on `@cline/sdk`&#039;s `ClineCore`.
+
+**Safety promise:** the tutor only diagnoses and hints. It **never** writes or reveals
+the fix. File-editing and network tools are disabled at the SDK policy level, the host
+shell command tool is replaced by a hardened `run_tests` tool and gated by a strict
+allow-list, and every hint is checked by a server-side guard before it reaches the
+student. Model free text and reasoning are filtered out on the server, so only a small
+allow-list of sanitised events ever reaches the browser.
+
+## 1. Prerequisites
+
+| Tool | Version | Why |
+|------|---------|-----|
+| Node.js | **22 or newer** (the Cline SDK and `package.json` `engines` both require `&gt;=22`) | runtime + SDK |
+| npm | bundled with Node | install |
+| Python 3 | `python3` on PATH | runs the Python assignments and `test:runner` |
+| C compiler | `gcc` (on macOS the `gcc`/`cc` shim from Xcode Command Line Tools — i.e. Apple clang — works) | compiles the C assignment |
+| git | any recent | clone |
+| Cline CLI (`cline`) | latest (verified on `3.0.68`) | only for real model calls (`check:agent`, `check:web`, and actually using the tutor) |
+| `pgrep` | any | used by `npm run test:runner` to assert process-group cleanup (built in on macOS; `procps` on Linux) |
+
+Check what you have:
+
+```sh
+node --version      # must be v22+ (verified v24.16.0)
+npm --version
+python3 --version
+ gcc --version       # macOS: Apple clang …; Linux: gcc (…)
+git --version
+cline --version     # optional until you run the agent
+```
+
+### macOS
+
+```sh
+# Command Line Tools: provides git, python3, and the clang gcc/cc shim
+xcode-select --install
+
+# Node.js 22+ (Homebrew)
+brew install node@22
+brew link node@22
+node --version
+```
+
+(Any Node ≥ 22 already installed via nvm or another method is fine too.)
+
+### Linux — Debian / Ubuntu
+
+```sh
+sudo apt update
+sudo apt install -y git python3 build-essential procps   # gcc, make, pgrep
+# Node.js 22+: the distro&#039;s `nodejs` may be older than 22, so prefer nvm or NodeSource.
+#   nvm:        nvm install 22 &amp;&amp; nvm use 22
+#   NodeSource: https://github.com/nodesource/distributions
+node --version   # must be v22+
+```
+
+### Linux — Fedora (dnf)
+
+```sh
+sudo dnf install -y git python3 gcc procps-ng   # procps-ng provides pgrep
+# Node.js 22+ via nvm or NodeSource, as above.
+```
+HL_EOF
+echo &#039;--- chunk 1 written, bytes ---&#039; &amp;&amp; wc -c README.md</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; cat &gt;&gt; README.md &lt;&lt;&#039;HL_EOF&#039;
+
+## 2. Cline CLI + ClinePass (provider credentials)
+
+HintLab does **not** ship or read an API key. In local backend mode the SDK resolves
+credentials itself from the Cline CLI&#039;s config directory (`~/.cline`), so the only setup
+step is to install the CLI and authenticate it with ClinePass once.
+
+1. Install the CLI (installs the `cline` binary):
+
+   ```sh
+   npm install -g cline
+   cline --version      # verified on 3.0.68
+   ```
+
+2. Authenticate with ClinePass. `cline auth` takes a positional provider shorthand and
+   flags (`-p/--provider`, `-k/--apikey`, `-m/--modelid`, `-b/--baseurl`):
+
+   ```sh
+   cline auth --help
+   # Usage: cline auth [options] [provider]
+   #   provider              Provider id (positional shorthand for -p)
+   #   -p, --provider &lt;id&gt;   Provider ID
+   #   -k, --apikey &lt;key&gt;    API key
+   #   -m, --modelid &lt;id&gt;    Model ID
+   #   -b, --baseurl &lt;url&gt;   Base URL
+
+   cline auth cline-pass -m cline-pass/deepseek-v4-pro
+   # (equivalent: cline auth -p cline-pass -m cline-pass/deepseek-v4-pro)
+   ```
+
+   This runs the ClinePass OAuth login flow (follow the prompts). On success the CLI
+   writes the ClinePass credentials to:
+
+   ```
+   ~/.cline/data/settings/providers.json   -&gt;   providers[&quot;cline-pass&quot;].settings.auth
+       { accessToken, refreshToken, expiresAt, accountId, metadata }
+   ```
+
+   Confirm with `cline config`.
+
+3. **How the server picks them up:** `src/config.ts` defaults
+   `HINTLAB_PROVIDER_ID=cline-pass` and `HINTLAB_MODEL_ID=cline-pass/deepseek-v4-pro`.
+   `src/agent.ts` creates `ClineCore.create({ clientName: &quot;hintlab&quot;, backendMode: &quot;local&quot; })`
+   and passes those ids (and **no** API key) to `cline.start(...)`. In local mode the SDK&#039;s
+   runtime host reads the provider&#039;s OAuth token from
+   `~/.cline/data/settings/providers.json`, refreshes it if expired, and injects it for the
+   request. Treat `~/.cline` as read-only: the server never writes to it and never logs any
+   token (it only ever prints provider/model names).
+
+4. **Using a different provider:** the code supports any provider the CLI has credentials
+   for, via env overrides. Authenticate that provider with the CLI first (so its
+   credentials land in `~/.cline`), then run:
+
+   ```sh
+   HINTLAB_PROVIDER_ID=anthropic HINTLAB_MODEL_ID=claude-sonnet-4-5 npm start
+   ```
+
+   There is no `API_KEY` env var and no `config.apiKey`; the only supported credential
+   source is `~/.cline`.
+
+## 3. Environment variables
+
+There is **no `.env` file and no dotenv loading** — `src/config.ts` reads `process.env`
+directly. Set them inline (`VAR=value npm start`) or export them. Every variable has a
+safe default.
+
+| Variable | Default | Meaning |
+|----------|---------|---------|
+| `PORT` | `3000` | HTTP port the server listens on |
+| `RUN_TIMEOUT_MS` | `5000` | Per-test run timeout (ms) |
+| `BUILD_TIMEOUT_MS` | `15000` | Build (`gcc`) timeout (ms) |
+| `MAX_OUTPUT_BYTES` | `1048576` (1 MiB) | Max captured stdout/stderr bytes per process |
+| `HINTLAB_PROVIDER_ID` | `cline-pass` | Provider id passed to `ClineCore` |
+| `HINTLAB_MODEL_ID` | `cline-pass/deepseek-v4-pro` | Model id passed to `ClineCore` |
+| `AGENT_TURN_TIMEOUT_MS` | `300000` (5 min) | Max time an agent turn (`start`/`send`) may run |
+| `SESSION_TTL_MS` | `1800000` (30 min) | Idle session lifetime before cleanup |
+| `SESSION_CLEANUP_INTERVAL_MS` | `60000` (1 min) | How often the cleanup loop runs |
+| `HEARTBEAT_MS` | `15000` | SSE keep-alive heartbeat interval |
+
+(Internally the runner also reads `process.env.PATH` to build the minimal environment it
+hands to student code — that&#039;s the OS `PATH`, not an app setting.)
+
+## 4. Install and run
+
+```sh
+git clone &lt;repo-url&gt; hintlab &amp;&amp; cd hintlab
+npm install
+
+npm start        # run once (tsx src/server.ts)
+npm run dev      # watch mode (tsx watch src/server.ts)
+```
+
+Open **http://localhost:3000/** (override the port with `PORT=3200 npm start`). The web
+UI is static (plain HTML/CSS/vanilla JS, no build step) and is served from `web/`.
+
+### Demo walkthrough (sum-of-list)
+
+1. Pick **`sum-of-list`** from the drop-down. The statement (&quot;Read space-separated
+   integers on one line and print their sum.&quot;) appears and the buggy starter is preloaded
+   into the editor (it loops `for i in range(1, len(nums))`, skipping the first number).
+2. Click **Run &amp; get hint**. The server runs the code in a fresh temp dir and the
+   **Test results** table appears — all 4 tests **FAIL** (`basic` got `5`, `single` got
+   `0`, `negatives` got `9`, `first-only-big` got `1`).
+3. The **Tutor activity** feed streams live as the agent reads the files (`read_files`)
+   and re-runs the tests (`run_tests`).
+4. A **Level 1: nudge** hint card appears (the level-1 agent turn starts automatically).
+5. Press **Next hint** → **Level 2: where to look**, then **Next hint** again →
+   **Level 3: the concept**. The button disables while the tutor is busy, and after
+   level 3 the status shows **All hints given**.
+6. At no point does the tutor write or show corrected code — you only ever see prose hints.
+HL_EOF
+echo &#039;--- chunk 2 done, bytes ---&#039; &amp;&amp; wc -c README.md</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; cat &gt;&gt; README.md &lt;&lt;&#039;HL_EOF&#039;
+
+## 5. npm scripts and checks
+
+| Script | Command | What it does |
+|--------|---------|--------------|
+| `npm start` | `tsx src/server.ts` | Run the server once |
+| `npm run dev` | `tsx watch src/server.ts` | Run in watch mode (restarts on change) |
+| `npm run build` | `tsc` | Type-check and emit JS to `dist/` (per `tsconfig.json`) |
+| `npm run typecheck` | `tsc --noEmit` | Type-check only, no output |
+| `npm run test:runner` | `tsx scripts/check-runner.ts` | Sandboxed runner checks — **no model call** |
+| `npm run check:agent` | `tsx scripts/check-agent.ts` | Allow-list + hint-guard unit tests + a **real model** e2e on `sum-of-list` |
+| `npm run check:web` | `tsx scripts/check-web.ts` | Static UI + SSE contract + a **real model** session |
+
+- **`npm run typecheck`** — `tsc --noEmit` across `src/` and `scripts/`. No network, no model.
+  Pass = exit 0 with no output. A few seconds.
+- **`npm run test:runner`** — runs the sandboxed runner against all three buggy starters and
+  asserts the exact pass/fail of every test (sum-of-list 0/4, is-palindrome 2/4,
+  average-marks 1/3), plus a correct solution for each assignment, an infinite-loop program
+  (must time out), a C compile error (must report a build failure), a segfault (must report
+  `SIGSEGV`), process-group kill (no stray `sleep` left behind, checked with `pgrep`),
+  minimal-env (server env does not leak), and temp-dir cleanup. **No model call.** A few
+  seconds. Pass = `ALL CHECKS PASSED`, exit 0.
+- **`npm run check:agent`** — first unit-tests the run_commands allow-list (including
+  `$`-expansion and pipe injection) and the hint guard; then it starts a server on
+  **`PORT=3200`**, posts a `sum-of-list` session, reads the SSE stream, and requests hints
+  at levels 2 and 3. It asserts exactly one accepted hint per level, that no hint contains
+  code, that **no `agent_text`/`reasoning` and no rejected-hint text reach SSE**, that
+  `run_commands` was never executed or approved, that `run_tests` was used (or results
+  otherwise reported), and that no edit/write tool ran. **Makes real model calls** (needs the
+  ClinePass login above). Overall timeout 8 minutes; prints the hints verbatim, the distinct
+  SSE event types, and the approval decisions; exits non-zero on failure. Leaves no server
+  running.
+- **`npm run check:web`** — starts the server on **`PORT=3200`**, fetches `/` (asserts the
+  page title/tagline and that `/app.js` + `/style.css` return 200), fetches
+  `/api/assignments`, starts one real session on `is-palindrome` (or `average-marks`), reads
+  the SSE stream until the level-1 hint (or a timeout), and asserts the event types contain
+  no `agent_text`/`reasoning`. **Makes real model calls.** Stops the server by PID; leaves
+  nothing running.
+
+&gt; The checks hard-code port **3200** and start/stop their own server; they never touch
+&gt; `PORT=3000`. `typecheck` and `test:runner` are the only checks that need no ClinePass login.
+
+## 6. API reference
+
+Base URL `http://localhost:3000` (or your `PORT`).
+
+### `GET /api/health`
+- `200` → `{ &quot;status&quot;: &quot;ok&quot; }`
+
+### `GET /api/assignments`
+- `200` → array of `{ id, language, statement, starterCode }` for each discovered assignment.
+
+### `POST /api/session`
+Run a submission and start a background level-1 agent turn.
+- Request body: `{ &quot;assignmentId&quot;: &quot;sum-of-list&quot;, &quot;code&quot;: &quot;…&quot; }` — `code` is optional
+  (omitted / empty / `null` uses the starter code).
+- `200` → `{ &quot;sessionId&quot;: &quot;&lt;uuid&gt;&quot;, &quot;testResults&quot;: { assignmentId, build, tests[], passed, failed, total } }`
+  (`testResults` is the sanitised shape below — no `sandboxDir`, trimmed `stderr`).
+- Errors: `400` (body not an object, missing/bad `assignmentId`, `code` not a string),
+  `404` (unknown `assignmentId`), `500` (internal error).
+
+### `GET /api/session/:id/stream`
+Server-Sent Events. `200`/`text/event-stream`; `404` if the session is unknown. Replays the
+buffered events, then streams live ones, with `: ping` heartbeats.
+
+### `POST /api/session/:id/next-hint`
+Ask for the next hint level (2, then 3).
+- `200` → `{ &quot;level&quot;: 2, &quot;status&quot;: &quot;idle&quot; }` — the hint itself arrives over SSE. After all
+  three hints: `{ &quot;level&quot;: 3, &quot;status&quot;: &quot;complete&quot;, &quot;message&quot;: &quot;All three hint levels have already been delivered.&quot; }`.
+- Errors: `404` unknown session, `409` agent still busy.
+
+### Static
+`GET /` and the `web/` assets are served with `express.static`.
+
+### SSE event types that reach the client
+
+Only the types below are ever forwarded; everything else (including the model&#039;s free text
+and reasoning) is dropped by `src/eventFilter.ts`.
+
+| Event | Payload |
+|-------|---------|
+| `test_results` | `{ assignmentId, build: { ok, timedOut, signal, stderr } \| null, tests: [{ name, input, expected, got, stderr, exitCode, signal, timedOut, passed }], passed, failed, total }` |
+| `tool_call` | `run_commands` → `{ toolName, command }`; `read_files` → `{ toolName, file }`; `run_tests` → `{ toolName, testName }` |
+| `tool_result` | `run_commands` → `{ toolName, output }`; `run_tests` → `{ toolName, passed, failed, total, build, tests[] }` (`read_files` results are dropped — they would leak the student&#039;s code) |
+| `approval` | `{ toolName, command, allowed, reason? }` (in HintLab `allowed` is always `false`) |
+| `hint` | `{ level, tag, text }` |
+| `hint_rejected` | `{ level, reason }` with `reason` ∈ `&quot;wrong level&quot; \| &quot;empty hint&quot; \| &quot;contained code&quot;` (never the rejected text) |
+| `hint_status` | whitelisted (reserved); the server currently emits `hint_rejected` instead |
+| `status` | `{ status }` — `created`, `running`, `idle`, `complete`, `error` |
+| `error` | `{ message }` — a short friendly line, never a stack trace or SDK text |
+| `done` | `{ reason }` |
+
+**Filtering:** raw agent events (`agent_text`, `reasoning`, unguarded tool output) are
+recorded server-side for debugging but never streamed; `filterEvent` applies the allow-list
+and sanitisation to both live events and the replayed history, so late joiners get the same
+contract.
+HL_EOF
+echo &#039;--- chunk 3 done, bytes ---&#039; &amp;&amp; wc -c README.md</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; cat &gt;&gt; README.md &lt;&lt;&#039;HL_EOF&#039;
+
+## 7. Architecture
+
+```
+ Browser (web/index.html + app.js — vanilla JS, EventSource)
+   │  POST /api/session  { assignmentId, code }
+   ▼
+ Express + TS server (src/app.ts, src/server.ts)          ESM, run via tsx
+   │
+   ├─ runAssignment(...,{cleanup:false}) ──► sandbox runner (src/runner.ts)
+   │     fresh temp dir os.tmpdir()/hintlab-&lt;uuid&gt;
+   │     writes main.py/main.c + tests.json + input-&lt;name&gt;.txt
+   │     build (gcc) / run (python3|./main) with per-test timeout,
+   │     process-group kill, minimal env (PATH, HOME=sandbox, LANG)
+   │
+   ├─ startSession / nextHint ──► ClineCore agent (src/agent.ts)
+   │     ClineCore.create({ clientName:&quot;hintlab&quot;, backendMode:&quot;local&quot; })   (once, lazy)
+   │     cline.start({ interactive:true, prompt, config:{sessionId, providerId, modelId,
+   │                   temperature:0, systemPrompt, cwd, workspaceRoot, enableTools,
+   │                   enableSpawnAgent:false, enableAgentTeams:false, extraTools},
+   │                   toolPolicies, capabilities })
+   │     cline.send({ sessionId, prompt })   for the next hint
+   │     cline.subscribe(handleCoreEvent)    -&gt;  mapped to SSE events
+   │     give_hint (createTool + zod)  +  run_tests (createTool + zod)  via extraTools
+   │
+   ├─ GET  /api/session/:id/stream  (SSE)  ◄── eventFilter.ts allow-list + sanitisation
+   └─ POST /api/session/:id/next-hint
+```
+
+### How the SDK is used
+- **One `ClineCore`**, created lazily in **local backend mode**
+  (`ClineCore.create({ clientName: &quot;hintlab&quot;, backendMode: &quot;local&quot; })`) and subscribed once;
+  reused across sessions.
+- **Start + send:** the first turn is
+  `cline.start({ interactive: true, prompt, config: {...}, toolPolicies, capabilities })`;
+  follow-up hint levels use `cline.send({ sessionId, prompt })`.
+- **Tool policies** (`toolPolicies()` in `src/agent.ts`): `run_commands`, `editor`,
+  `apply_patch`, `fetch_web_content`, `skills`, `ask_question`, `submit_and_exit` are
+  `{ enabled: false }`; `read_files`, `search_codebase`, `give_hint`, `run_tests` are
+  auto-approved.
+- **Approval** (`capabilities().requestToolApproval`): returns `{ approved: false }` for
+  everything, so any command attempt is blocked and surfaced as an `approval` (denied)
+  event — defence-in-depth on top of the disabled `run_commands` policy.
+- **`run_commands` allow-list** (`src/allowlist.ts`): first rejects any command containing
+  `; &amp;&amp; || ` $ | &gt; &amp; newline CR * ?`, then requires an exact match of the whitelist — only
+  `python3 main.py`, `python3 main.py &lt; input-*.txt`, `gcc -Wall -O0 main.c -o main`,
+  `./main`, `./main &lt; input-*.txt`, and `cat (main.py|main.c|tests.json|input-*.txt)`. Since
+  `run_commands` runs **on the host**, this allow-list (plus the disabled policy) is the only
+  protection between the model and an arbitrary shell.
+- **Custom tools:** `give_hint` and `run_tests` are built with `createTool(...)` + zod
+  schemas and passed through `config.extraTools`. `give_hint` is the only hint sink (the
+  server-side guard runs inside its `execute`); `run_tests` runs student code through the
+  hardened server runner instead of the host shell.
+- **Events:** `cline.subscribe(handleCoreEvent)` maps SDK `agent_event`s (tool starts/ends,
+  done, error) and `status`/`ended` to the SSE allow-list; model text/reasoning are dropped.
+- **Hint guard** (`src/hintGuard.ts`): rejects a hint containing a fenced code block, inline
+  code beyond a short identifier, or any line that looks like source code (control flow,
+  function calls, assignments, casts, indexing/slicing, comparisons, trailing semicolons).
+  A rejected hint becomes a tool error so the model rephrases without code.
+- **Sandboxed runner** (`src/runner.ts`): a fresh temp dir per run, per-test timeouts,
+  `detached:true` + process-group `SIGKILL` to reap child processes, a minimal env (`PATH`,
+  `HOME`=sandbox, `LANG`) so student code cannot see server env or `~/.cline`, signal
+  reporting (`SIGSEGV`, `SIGABRT`, …), and cleanup of the temp dir (except the agent&#039;s
+  workdir, which is removed later at TTL).
+
+### SDK quirks worth knowing
+1. **Node 22+** — the SDK and `package.json` `engines` require it.
+2. **`moduleResolution: &quot;Bundler&quot;`** (with `module: &quot;ESNext&quot;`) — required by the SDK&#039;s type
+   exports (`tsconfig.json`).
+3. **`read_files` needs absolute paths** — the prompt builder injects
+   `path.resolve(sandboxDir, ...)`.
+4. **`send()` follow-ups only work after an `interactive: true` `start()`** —
+   `src/agent.ts` always starts interactively.
+5. **`run_commands` runs on the host** — so the allow-list + disabled policy is the only
+   protection; that&#039;s why the agent&#039;s own test execution goes through the custom `run_tests`
+   tool instead.
+
+## 8. Assignments
+
+Each assignment is a directory under `assignments/&lt;id&gt;/` containing a `tests.json` and a
+starter source file. `id` is the directory name and must be a &quot;plain slug&quot;
+(`^[a-z0-9]+(-[a-z0-9]+)*$` — lowercase letters/digits separated by single hyphens).
+
+`tests.json` shape:
+
+```json
+{
+  &quot;assignmentId&quot;: &quot;sum-of-list&quot;,
+  &quot;language&quot;: &quot;python&quot;,
+  &quot;statement&quot;: &quot;Read space-separated integers on one line and print their sum.&quot;,
+  &quot;run&quot;: &quot;python3 main.py&quot;,
+  &quot;build&quot;: &quot;gcc -Wall -O0 main.c -o main&quot;,
+  &quot;tests&quot;: [
+    { &quot;name&quot;: &quot;basic&quot;, &quot;input&quot;: &quot;1 2 3\n&quot;, &quot;expected&quot;: &quot;6&quot; }
+  ]
+}
+```
+
+- `language`: `&quot;python&quot;` or `&quot;c&quot;`.
+- `run`: the command that runs the program; `build` (optional, C only): the compile command.
+- Each test: `name` (unique), `input` (fed to stdin verbatim), `expected` (compared to
+  trimmed stdout).
+
+The starter file is `main.py` (Python) or `main.c` (C) and is loaded into the editor as the
+pre-filled buggy code. To add an assignment, create `assignments/&lt;id&gt;/{tests.json,
+main.py|main.c}`; `listAssignments()` discovers it automatically and the runner reads it
+fresh per session.
+
+## 9. Troubleshooting
+
+- **`node` too old / `npm install` fails** — the SDK needs Node ≥ 22. `node --version`; install
+  Node 22+ (see §1).
+- **Missing `gcc` or `python3`** — `test:runner` and the C assignment need them.
+  `gcc --version`, `python3 --version`. macOS: `xcode-select --install`. Debian/Ubuntu:
+  `sudo apt install -y build-essential python3`. Fedora: `sudo dnf install -y gcc python3`.
+- **`EADDRINUSE` / &quot;port already in use&quot;** — another process holds the port. Use
+  `PORT=3200 npm start`, or find it: `lsof -i :3000` (macOS) / `ss -ltnp` (Linux), then
+  `kill &lt;pid&gt;`. The bundled checks use `PORT=3200` and manage their own server.
+- **&quot;Tutor timed out&quot; / no hint appears** — a model call was slow or ClinePass expired. Check
+  the feed and server log. The per-turn timeout is `AGENT_TURN_TIMEOUT_MS` (default 5 min).
+- **ClinePass not logged in / expired** — `cline config` shows the current provider; re-run
+  `cline auth cline-pass`. Without valid credentials the agent turns end in an `error` event.
+- **`cline: command not found`** — the CLI isn&#039;t on PATH; run `npm install -g cline` and make
+  sure npm&#039;s global bin (e.g. `~/.npm-global/bin`) is on `PATH`.
+- **A hint is rejected and the tutor rephrases** — normal: the model proposed a code-bearing
+  hint and the guard made it rephrase; you&#039;ll see `hint_rejected` in the feed.
+
+## 10. Project layout
+
+```
+HintLab/
+├── README.md
+├── PLAN.md                  # build plan (aspirational; the code is the source of truth)
+├── package.json             # deps + scripts; engines.node &gt;= 22
+├── tsconfig.json            # ESNext + moduleResolution Bundler
+├── .gitignore               # node_modules, dist, .env, *.log, *.tmp
+├── assignments/
+│   ├── sum-of-list/{tests.json, main.py}
+│   ├── is-palindrome/{tests.json, main.py}
+│   └── average-marks/{tests.json, main.c}
+├── src/
+│   ├── server.ts            # bootstrap: createApp, cleanup loop, listen
+│   ├── app.ts               # express routes + static web/
+│   ├── config.ts            # env (PORT, timeouts, provider/model)
+│   ├── types.ts             # shared TS types
+│   ├── assignments.ts       # discover/load/validate tests.json
+│   ├── runner.ts            # sandboxed build+run+compare (Python &amp; C)
+│   ├── agent.ts             # ClineCore agent (policies, allow-list, give_hint, run_tests)
+│   ├── allowlist.ts         # run_commands allow-list
+│   ├── hintGuard.ts         # server-side hint guard
+│   ├── eventFilter.ts       # SSE allow-list + sanitisation
+│   ├── sessions.ts          # in-memory sessions + event bus + TTL cleanup
+│   └── sse.ts               # SSE helpers
+├── scripts/
+│   ├── check-runner.ts      # sandboxed runner checks (no model)
+│   ├── check-agent.ts       # allow-list/hint-guard units + real-model e2e
+│   └── check-web.ts         # static UI + SSE contract + real-model session
+├── web/
+│   ├── index.html
+│   ├── style.css
+│   └── app.js               # vanilla JS UI (EventSource SSE client)
+└── cline-proof/             # prompts + session logs + test fixtures (see below)
+```
+
+## 11. How this was built
+
+All application code was written by the **Cline CLI** from the prompts in
+`cline-proof/prompts/`, with the full session logs in `cline-proof/sessions/` (and in the
+Cline session history). The git commits follow the prompt steps (`00-plan`,
+`01-server-runner`, `02-agent`, `02c-runner-hardening`, `03-web-ui`).
+
+## 12. Disclosure
+
+- Example Cline SDK snippets (in the now-removed `cline-proof/reference/sdk-check/`) were
+  prepared **before** the sprint and used only as reference material for Cline&#039;s SDK API.
+  They were never imported by the app and were removed from the repo during the sprint (they
+  remain in git history). All app code was written by Cline during the sprint, as shown in
+  `cline-proof/` (prompts and session logs) and the Cline session history.
+- The three sample buggy programs and their `tests.json` files under
+  `cline-proof/reference/fixtures/` were prepared **before** the sprint as test data, and
+  were copied unchanged into `assignments/`.
+HL_EOF
+echo &#039;--- chunk 4 done, bytes ---&#039; &amp;&amp; wc -c README.md</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>Let me read back the full README to verify it&#039;s correct and complete.</div>
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/README.md&quot;
+    }
+  ]
+}</div>
+    </div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="diff-block">
+      <div class="diff-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m10 13-2 2 2 2"/><path d="m14 17 2-2-2-2"/></svg>
+        <span>/Users/prakharagarwal/ClineHackathon/README.md</span>
+        <span class="badge">md</span>
+        
+        <div class="diff-stats">
+          <span class="added">+2</span>
+          <span class="removed">-2</span>
+        </div>
+      </div>
+      <div class="diff-content">
+        
+        <div class="diff-line removed">
+          <div class="line-num">1</div>
+          <div class="line-indicator removed">-</div>
+          <div class="line-content removed">python3 --version</div>
+        </div>
+        <div class="diff-line removed">
+          <div class="line-num">2</div>
+          <div class="line-indicator removed">-</div>
+          <div class="line-content removed"> gcc --version       # macOS: Apple clang …; Linux: gcc (…)</div>
+        </div>
+      <div class="diff-line added">
+        <div class="line-num">1</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">python3 --version</div>
+      </div>
+      <div class="diff-line added">
+        <div class="line-num">2</div>
+        <div class="line-indicator added">+</div>
+        <div class="line-content added">gcc --version        # macOS: Apple clang …; Linux: gcc (…)</div>
+      </div>
+      </div>
+    </div>
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/README.md&quot;,
+      &quot;start_line&quot;: 90,
+      &quot;end_line&quot;: 260
+    }
+  ]
+}</div>
+    </div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>The README is complete. Now let me verify it against reality by running the safe commands. First, <code>npm install</code>, then typecheck and the runner test.</div>
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; npm install 2&gt;&amp;1 | tail -8</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== npm run typecheck ===&#039; &amp;&amp; npm run typecheck 2&gt;&amp;1 | tail -20 &amp;&amp; echo &quot;typecheck exit: $?&quot;</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== npm run test:runner ===&#039; &amp;&amp; npm run test:runner 2&gt;&amp;1 | tail -50 &amp;&amp; echo &quot;test:runner exit: ${PIPESTATUS[0]}&quot;</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>echo &#039;=== cline auth --help ===&#039; &amp;&amp; cline auth --help 2&gt;&amp;1 | head -20</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>All checks pass. Now let me start the server on PORT=3200, curl the health endpoint, and stop it by PID.</div>
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; PORT=3200 npm start &gt; /tmp/hintlab-3200.log 2&gt;&amp;1 &amp;
+SRV=$!
+for i in $(seq 1 40); do
+  if curl -sf http://127.0.0.1:3200/api/health &gt; /tmp/hintlab-health.json 2&gt;/dev/null; then break; fi
+  sleep 0.5
+done
+echo &#039;--- health response ---&#039;
+cat /tmp/hintlab-health.json 2&gt;/dev/null || echo &#039;(no health response)&#039;
+echo
+echo &#039;--- server log ---&#039;
+tail -5 /tmp/hintlab-3200.log
+PID=$(lsof -ti tcp:3200 2&gt;/dev/null)
+echo &quot;--- PID bound to :3200 = ${PID:-none} ---&quot;
+if [ -n &quot;$PID&quot; ]; then kill &quot;$PID&quot; 2&gt;/dev/null; fi
+sleep 1
+if lsof -ti tcp:3200 &gt;/dev/null 2&gt;&amp;1; then echo &#039;WARNING: port 3200 still bound&#039;; else echo &#039;port 3200 is now free&#039;; fi
+kill &quot;$SRV&quot; 2&gt;/dev/null
+echo &#039;done&#039;</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>The server started, returned <code>{&quot;status&quot;:&quot;ok&quot;}</code>, and was stopped cleanly (port 3200 now free). Let me do a final verification of the git state to confirm only the intended changes were made.</div>
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; echo &#039;=== git status --short ===&#039; &amp;&amp; git --no-pager status --short &amp;&amp; echo &amp;&amp; echo &#039;=== README change summary ===&#039; &amp;&amp; git --no-pager diff --stat -- README.md &amp;&amp; echo &amp;&amp; echo &#039;=== confirm no code/scripts/tsconfig/package.json modified ===&#039; &amp;&amp; git --no-pager status --short -- src scripts tsconfig.json package.json web assignments || true</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>The task is complete. Here&#039;s a summary of what I did and verified.<br><br>## What changed<br><br><strong>1. <code>README.md</code> rewritten</strong> (429 insertions, 164 deletions) — a full, accurate rewrite based only on what the code actually does. It covers all 12 required items:<br><br>1. <strong>What HintLab is</strong> + the safety promise (tutor diagnoses + tiered hints, never writes the fix; edit/network tools disabled, <code>run_commands</code> replaced/allow-listed, server-side hint guard, model free-text/reasoning filtered).<br>2. <strong>Prerequisites</strong> with exact versions and macOS (Homebrew + Xcode CLT) / Debian-Ubuntu (<code>apt</code>) / Fedora (<code>dnf</code>) install steps: Node ≥ 22 (SDK + <code>engines</code> require it), npm, <code>python3</code>, <code>gcc</code> (Apple clang shim ok), git, Cline CLI, and <code>pgrep</code> (used by <code>test:runner</code>).<br>3. <strong>ClinePass/provider setup</strong>: <code>npm install -g cline</code>, <code>cline auth cline-pass -m cline-pass/deepseek-v4-pro</code> (verified <code>cline auth</code> help: positional provider + <code>-p/-k/-m/-b</code> flags), credentials land in <code>~/.cline/data/settings/providers.json</code>, and how <code>ClineCore.create({ clientName:&quot;hintlab&quot;, backendMode:&quot;local&quot; })</code> picks them up with no API key — plus the &quot;other provider&quot; path via <code>HINTLAB_PROVIDER_ID</code>/<code>HINTLAB_MODEL_ID</code>.<br>4. <strong>Every env var</strong> (<code>grep process.env</code>): <code>PORT</code>, <code>RUN_TIMEOUT_MS</code>, <code>BUILD_TIMEOUT_MS</code>, <code>MAX_OUTPUT_BYTES</code>, <code>HINTLAB_PROVIDER_ID</code>, <code>HINTLAB_MODEL_ID</code>, <code>AGENT_TURN_TIMEOUT_MS</code>, <code>SESSION_TTL_MS</code>, <code>SESSION_CLEANUP_INTERVAL_MS</code>, <code>HEARTBEAT_MS</code> — with defaults. Noted there&#039;s <strong>no <code>.env</code>/dotenv loading</strong>, so I correctly did *not* add a <code>.env.example</code>.<br>5. <strong>Install &amp; run + demo walkthrough</strong> (sum-of-list → 0/4 fail → hints 1/2/3 → &quot;All hints given&quot;).<br>6. <strong>All npm scripts + checks</strong> with which ones make real model calls and what a pass looks like.<br>7. <strong>API reference</strong> for all 5 endpoints + static, and the full SSE event allow-list with payload shapes and the server-side filtering note.<br>8. <strong>Architecture</strong> text diagram + exact SDK usage (<code>ClineCore</code> once/lazy, <code>interactive: true</code> start + <code>send</code>, <code>toolPolicies</code>, <code>requestToolApproval</code> deny-all, the allow-list command forms, <code>createTool</code>+zod <code>give_hint</code>/<code>run_tests</code> via <code>extraTools</code>, <code>subscribe</code>→SSE, hint guard, sandboxed runner) + the 5 SDK quirks.<br>9. <strong>Assignments</strong> <code>tests.json</code> format + how to add one.<br>10. <strong>Troubleshooting</strong>.<br>11. <strong>Project layout tree</strong> + &quot;How this was built&quot;.<br>12. <strong>Disclosure</strong> section (SDK snippets + fixtures origin).<br><br><strong>2. Repo cleanup (item 12):</strong> <code>git rm -r cline-proof/reference/sdk-check/</code> — staged for deletion, <strong>not committed</strong> (leaves the 8 files as <code>D</code> in the index). <code>cline-proof/reference/fixtures/</code> kept intact.<br><br>## Verified against reality<br><br>| Check | Result |<br>|---|---|<br>| <code>npm install</code> | ✅ success |<br>| <code>npm run typecheck</code> | ✅ exit 0 |<br>| <code>npm run test:runner</code> | ✅ <code>ALL CHECKS PASSED</code>, exit 0 |<br>| <code>cline auth --help</code> | ✅ confirmed positional provider + <code>-p/-k/-m/-b</code> flags |<br>| Server on <code>PORT=3200</code> → <code>curl /api/health</code> | ✅ <code>{&quot;status&quot;:&quot;ok&quot;}</code>, then stopped by PID (20912), port 3200 free |<br><br>I only ever touched port <strong>3200</strong>, never 3100, and used no broad <code>pkill</code> patterns.<br><br>## Things I could not / did not verify<br><br>- <strong><code>check:agent</code> and <code>check:web</code></strong> were <strong>not re-run</strong> (they make real model calls; per your instruction not to re-run them unless needed).<br>- <strong>The ClinePass OAuth flow itself</strong> (would require an interactive login) — I verified the CLI command help and the credential-file structure, but did not perform a fresh login.<br>- <strong><code>npm run build</code></strong> (tsc emit) wasn&#039;t run; <code>typecheck</code> (<code>tsc --noEmit</code>) passed, which covers compilation.<br><br>## Note on the <code>sdk-check</code> reference search<br><br>I searched for <code>sdk-check</code> across the whole repo. <strong>Nothing in <code>src/</code>, <code>scripts/</code>, <code>tsconfig.json</code>, or <code>package.json</code> references it.</strong> The only remaining references are in <code>PLAN.md</code> (documentation — e.g., &quot;matches how <code>sdk-check</code> was run&quot; and &quot;mirroring <code>sdk-check</code>&quot;) and inside <code>cline-proof/</code> (the prompts and the Cline session logs, which are build evidence, not app code). Per your instruction I did not change any of those files; I&#039;m reporting them here instead.<br><br>The pre-existing untracked files (<code>cline-proof/prompts/04-readme.md</code>, <code>cline-proof/screens/</code>, <code>cline-proof/sessions/04-readme.json</code> + <code>.timing.txt</code>, <code>cline-proof/tests/</code>) were already present before I started and were left untouched.</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Dots Navigation Bar -->
+  <nav class="dots-nav">
+    <button class="dots-nav-btn" onclick="scrollToMessage(0)" title="Scroll to top">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+    </button>
+    <div class="dots-container">
+      
+        <div class="dot user" data-index="0" onclick="scrollToMessage(0)" title="Message 1: user"></div>
+      
+        <div class="dot assistant" data-index="1" onclick="scrollToMessage(1)" title="Message 2: assistant"></div>
+      
+        <div class="dot assistant" data-index="2" onclick="scrollToMessage(2)" title="Message 3: assistant"></div>
+      
+        <div class="dot assistant" data-index="3" onclick="scrollToMessage(3)" title="Message 4: assistant"></div>
+      
+        <div class="dot assistant" data-index="4" onclick="scrollToMessage(4)" title="Message 5: assistant"></div>
+      
+        <div class="dot assistant" data-index="5" onclick="scrollToMessage(5)" title="Message 6: assistant"></div>
+      
+        <div class="dot assistant" data-index="6" onclick="scrollToMessage(6)" title="Message 7: assistant"></div>
+      
+        <div class="dot assistant" data-index="7" onclick="scrollToMessage(7)" title="Message 8: assistant"></div>
+      
+        <div class="dot assistant" data-index="8" onclick="scrollToMessage(8)" title="Message 9: assistant"></div>
+      
+        <div class="dot assistant" data-index="9" onclick="scrollToMessage(9)" title="Message 10: assistant"></div>
+      
+        <div class="dot assistant" data-index="10" onclick="scrollToMessage(10)" title="Message 11: assistant"></div>
+      
+        <div class="dot assistant" data-index="11" onclick="scrollToMessage(11)" title="Message 12: assistant"></div>
+      
+        <div class="dot assistant" data-index="12" onclick="scrollToMessage(12)" title="Message 13: assistant"></div>
+      
+        <div class="dot assistant" data-index="13" onclick="scrollToMessage(13)" title="Message 14: assistant"></div>
+      
+        <div class="dot assistant" data-index="14" onclick="scrollToMessage(14)" title="Message 15: assistant"></div>
+      
+        <div class="dot assistant" data-index="15" onclick="scrollToMessage(15)" title="Message 16: assistant"></div>
+      
+        <div class="dot assistant" data-index="16" onclick="scrollToMessage(16)" title="Message 17: assistant"></div>
+      
+        <div class="dot assistant" data-index="17" onclick="scrollToMessage(17)" title="Message 18: assistant"></div>
+      
+        <div class="dot assistant" data-index="18" onclick="scrollToMessage(18)" title="Message 19: assistant"></div>
+      
+        <div class="dot assistant" data-index="19" onclick="scrollToMessage(19)" title="Message 20: assistant"></div>
+      
+        <div class="dot assistant" data-index="20" onclick="scrollToMessage(20)" title="Message 21: assistant"></div>
+      
+        <div class="dot assistant" data-index="21" onclick="scrollToMessage(21)" title="Message 22: assistant"></div>
+      
+        <div class="dot assistant" data-index="22" onclick="scrollToMessage(22)" title="Message 23: assistant"></div>
+      
+        <div class="dot assistant" data-index="23" onclick="scrollToMessage(23)" title="Message 24: assistant"></div>
+      
+        <div class="dot assistant" data-index="24" onclick="scrollToMessage(24)" title="Message 25: assistant"></div>
+      
+        <div class="dot assistant" data-index="25" onclick="scrollToMessage(25)" title="Message 26: assistant"></div>
+      
+        <div class="dot assistant" data-index="26" onclick="scrollToMessage(26)" title="Message 27: assistant"></div>
+      
+        <div class="dot assistant" data-index="27" onclick="scrollToMessage(27)" title="Message 28: assistant"></div>
+      
+        <div class="dot assistant" data-index="28" onclick="scrollToMessage(28)" title="Message 29: assistant"></div>
+      
+        <div class="dot assistant" data-index="29" onclick="scrollToMessage(29)" title="Message 30: assistant"></div>
+      
+        <div class="dot assistant" data-index="30" onclick="scrollToMessage(30)" title="Message 31: assistant"></div>
+      
+        <div class="dot assistant" data-index="31" onclick="scrollToMessage(31)" title="Message 32: assistant"></div>
+      
+        <div class="dot assistant" data-index="32" onclick="scrollToMessage(32)" title="Message 33: assistant"></div>
+      
+        <div class="dot assistant" data-index="33" onclick="scrollToMessage(33)" title="Message 34: assistant"></div>
+      
+        <div class="dot assistant" data-index="34" onclick="scrollToMessage(34)" title="Message 35: assistant"></div>
+      
+        <div class="dot assistant" data-index="35" onclick="scrollToMessage(35)" title="Message 36: assistant"></div>
+      
+        <div class="dot assistant" data-index="36" onclick="scrollToMessage(36)" title="Message 37: assistant"></div>
+      
+        <div class="dot assistant" data-index="37" onclick="scrollToMessage(37)" title="Message 38: assistant"></div>
+      
+        <div class="dot assistant" data-index="38" onclick="scrollToMessage(38)" title="Message 39: assistant"></div>
+      
+        <div class="dot assistant" data-index="39" onclick="scrollToMessage(39)" title="Message 40: assistant"></div>
+      
+        <div class="dot assistant" data-index="40" onclick="scrollToMessage(40)" title="Message 41: assistant"></div>
+      
+        <div class="dot assistant" data-index="41" onclick="scrollToMessage(41)" title="Message 42: assistant"></div>
+      
+        <div class="dot assistant" data-index="42" onclick="scrollToMessage(42)" title="Message 43: assistant"></div>
+      
+        <div class="dot assistant" data-index="43" onclick="scrollToMessage(43)" title="Message 44: assistant"></div>
+      
+    </div>
+    <button class="dots-nav-btn" onclick="scrollToMessage(43)" title="Scroll to bottom">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+  </nav>
+  
+  <script>
+    let currentIndex = 0;
+    const messages = document.querySelectorAll('.message');
+    const dots = document.querySelectorAll('.dot');
+    
+    function scrollToMessage(index) {
+      if (index >= 0 && index < messages.length) {
+        messages[index].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        updateActiveDot(index);
+      }
+    }
+    
+    function updateActiveDot(index) {
+      dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === index);
+      });
+      currentIndex = index;
+    }
+    
+    // Track scroll position to update active dot
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const index = Array.from(messages).indexOf(entry.target);
+          if (index !== -1) {
+            updateActiveDot(index);
+          }
+        }
+      });
+    }, { threshold: 0.5, rootMargin: '-80px 0px -50% 0px' });
+    
+    messages.forEach(msg => observer.observe(msg));
+    
+    // Initialize first dot as active
+    if (dots.length > 0) {
+      dots[0].classList.add('active');
+    }
+  </script>
+</body>
+</html>

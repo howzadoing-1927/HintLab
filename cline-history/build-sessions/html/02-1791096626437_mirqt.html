@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1791096626437_mirqt - Conversation Export</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #09090b;
+      color: #fafafa;
+      line-height: 1.6;
+    }
+
+    html,
+    body,
+    .content pre,
+    .tool-content,
+    .line-content,
+    .dots-container {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar,
+    .content pre::-webkit-scrollbar,
+    .tool-content::-webkit-scrollbar,
+    .line-content::-webkit-scrollbar,
+    .dots-container::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+    
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(9, 9, 11, 0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid #27272a;
+      padding: 1rem 1.5rem;
+    }
+    
+    .header-content {
+      max-width: 56rem;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    
+    .stats {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      color: #a1a1aa;
+    }
+    
+    .stat svg {
+      width: 1rem;
+      height: 1rem;
+    }
+    
+    .messages {
+      max-width: 56rem;
+      margin: 0 auto;
+    }
+    
+    .message {
+      padding: 1.5rem;
+      border-bottom: 1px solid #18181b;
+    }
+    
+    .message.user {
+      background: rgba(39, 39, 42, 0.3);
+    }
+    
+    .message-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    
+    .avatar {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    
+    .avatar.user {
+      background: #3b82f6;
+      color: white;
+    }
+    
+    .avatar.assistant {
+      background: #27272a;
+      color: #a1a1aa;
+    }
+    
+    .role {
+      font-weight: 500;
+      font-size: 0.875rem;
+    }
+    
+    .model {
+      font-size: 0.75rem;
+      color: #71717a;
+      font-family: ui-monospace, monospace;
+    }
+    
+    .content {
+      padding-left: 2.75rem;
+    }
+    
+    .content p {
+      margin-bottom: 0.5rem;
+    }
+    
+    .content pre {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      overflow-x: auto;
+      font-family: ui-monospace, monospace;
+      font-size: 0.875rem;
+      margin: 0.75rem 0;
+    }
+    
+    .content code {
+      font-family: ui-monospace, monospace;
+      background: #27272a;
+      padding: 0.125rem 0.25rem;
+      border-radius: 0.25rem;
+      font-size: 0.875rem;
+    }
+    
+    .content pre code {
+      background: transparent;
+      padding: 0;
+    }
+    
+    .tool-block {
+      margin: 0.75rem 0;
+      border: 1px solid #27272a;
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+    
+    .tool-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: #18181b;
+      font-family: ui-monospace, monospace;
+      font-size: 0.875rem;
+    }
+    
+    .tool-header svg {
+      width: 1rem;
+      height: 1rem;
+      color: #71717a;
+    }
+    
+    .tool-content {
+      padding: 1rem;
+      font-family: ui-monospace, monospace;
+      font-size: 0.75rem;
+      background: #09090b;
+      white-space: pre-wrap;
+      word-break: break-all;
+      overflow: auto;
+    }
+    
+    .diff-block {
+      margin: 0.75rem 0;
+      border: 1px solid #27272a;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      background: #09090b;
+    }
+    
+    .diff-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1rem;
+      background: #18181b;
+      border-bottom: 1px solid #27272a;
+      font-family: ui-monospace, monospace;
+      font-size: 0.875rem;
+    }
+    
+    .diff-header svg {
+      width: 1rem;
+      height: 1rem;
+      color: #71717a;
+    }
+    
+    .diff-stats {
+      margin-left: auto;
+      display: flex;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+    }
+    
+    .diff-stats .added {
+      color: #4ade80;
+    }
+    
+    .diff-stats .removed {
+      color: #f87171;
+    }
+    
+    .diff-content {
+      font-family: ui-monospace, monospace;
+      font-size: 0.75rem;
+    }
+    
+    .diff-line {
+      display: flex;
+      border-bottom: 1px solid #18181b;
+    }
+    
+    .diff-line:last-child {
+      border-bottom: none;
+    }
+    
+    .diff-line.added {
+      background: rgba(74, 222, 128, 0.1);
+    }
+    
+    .diff-line.removed {
+      background: rgba(248, 113, 113, 0.1);
+    }
+    
+    .line-num {
+      width: 3rem;
+      padding: 0.125rem 0.5rem;
+      text-align: right;
+      color: #52525b;
+      border-right: 1px solid #27272a;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    
+    .line-indicator {
+      width: 1.5rem;
+      padding: 0.125rem 0.25rem;
+      text-align: center;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    
+    .line-indicator.added {
+      color: #4ade80;
+      font-weight: bold;
+    }
+    
+    .line-indicator.removed {
+      color: #f87171;
+      font-weight: bold;
+    }
+    
+    .line-content {
+      padding: 0.125rem 0.75rem;
+      white-space: pre;
+      overflow-x: auto;
+      flex: 1;
+    }
+    
+    .line-content.added {
+      color: #86efac;
+    }
+    
+    .line-content.removed {
+      color: #fca5a5;
+    }
+    
+    .badge {
+      font-size: 0.625rem;
+      padding: 0.125rem 0.375rem;
+      border-radius: 0.25rem;
+      background: #27272a;
+      color: #71717a;
+    }
+    
+    .badge.new-file {
+      background: rgba(74, 222, 128, 0.2);
+      color: #4ade80;
+    }
+    
+    .error {
+      color: #f87171;
+    }
+    
+    .success {
+      color: #4ade80;
+    }
+    
+    .file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      margin: 0.5rem 0;
+    }
+    
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.375rem 0.75rem;
+      background: #18181b;
+      border-radius: 0.375rem;
+      font-family: ui-monospace, monospace;
+      font-size: 0.75rem;
+      color: #a1a1aa;
+    }
+    
+    .command-block {
+      margin: 0.5rem 0;
+      padding: 0.75rem 1rem;
+      background: #18181b;
+      border-radius: 0.5rem;
+      font-family: ui-monospace, monospace;
+      font-size: 0.75rem;
+    }
+    
+    .command-label {
+      font-size: 0.625rem;
+      color: #71717a;
+      margin-bottom: 0.25rem;
+    }
+    
+    .dots-nav {
+      position: fixed;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    
+    .dots-nav-btn {
+      padding: 0.375rem;
+      border-radius: 0.5rem;
+      background: #27272a;
+      border: 1px solid #3f3f46;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .dots-nav-btn:hover {
+      background: #3f3f46;
+    }
+    
+    .dots-nav-btn svg {
+      width: 0.75rem;
+      height: 0.75rem;
+      color: #a1a1aa;
+    }
+    
+    .dots-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      background: #27272a;
+      border: 1px solid #3f3f46;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+    
+    .dot {
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    
+    .dot.user {
+      background: rgba(59, 130, 246, 0.4);
+    }
+    
+    .dot.user:hover {
+      background: rgba(59, 130, 246, 0.6);
+    }
+    
+    .dot.assistant {
+      background: rgba(161, 161, 170, 0.4);
+    }
+    
+    .dot.assistant:hover {
+      background: rgba(161, 161, 170, 0.6);
+    }
+    
+    .dot.active {
+      background: #3b82f6;
+      transform: scale(1.25);
+    }
+    
+    @media (max-width: 1024px) {
+      .dots-nav {
+        display: none;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .stats {
+        gap: 1rem;
+      }
+      
+      .content {
+        padding-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-content">
+      <div class="stats">
+        <div class="stat">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+          <span>5 messages</span>
+        </div>
+        
+        
+        <div class="stat">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/></svg>
+          <span>61,768 tokens</span>
+        </div>
+        
+        
+        <div class="stat">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>10/4/2026, 12:23:00 PM</span>
+        </div>
+        
+      </div>
+    </div>
+  </header>
+  
+  <div class="messages">
+    
+    <div class="message user">
+      <div class="message-header">
+        <div class="avatar user">
+          U
+        </div>
+        <span class="role">User</span>
+        
+      </div>
+      <div class="content">
+        <div>You are planning a hackathon project called HintLab in this repo (/Users/prakharagarwal/ClineHackathon). Do not write any code yet. Produce a step-by-step build plan.<br><br>First read everything under cline-proof/reference/:<br>- cline-proof/reference/fixtures/: three buggy student programs (sum-of-list/main.py, is-palindrome/main.py, average-marks/main.c), each with a tests.json (assignmentId, language, statement, optional build command, run command, and tests with input/expected). check_fixtures.py shows how the tests are meant to be run (stdout is trimmed and compared exactly to expected).<br>- cline-proof/reference/sdk-check/: verified snippets for the Cline SDK (@cline/sdk 0.0.90, zod 4). 02-clinecore-mock.ts and 03-real-provider-smoke.ts show the real ClineCore pattern HintLab will use: ClineCore.create, cline.start with toolPolicies, capabilities.requestToolApproval, extraTools with a createTool + zod give_hint tool, cline.subscribe events, and cline.send follow-ups. README.md explains what was run.<br>Do not modify anything under cline-proof/.<br><br>What HintLab is: a debugging tutor for programming labs. A student pastes code and picks an assignment. An agent built with the Cline SDK runs the code against the assignment&#039;s test cases in a sandbox (a temp directory), diagnoses the failure, and gives tiered hints (level 1 nudge, level 2 where to look, level 3 the concept). It must never write the fix: the editor and apply_patch tools are disabled, run_commands goes through an approval callback that enforces a shell allow-list, hints are delivered only through a custom give_hint tool (createTool + zod, passed via extraTools), and cline.subscribe events are streamed live to the browser over Server-Sent Events.<br><br>Stack and API:<br>- Express + TypeScript server, ESM.<br>- POST /api/session: body { assignmentId, code } -&gt; creates a session, writes the code into a sandbox temp dir, runs the tests, starts the agent, returns { sessionId, testResults }.<br>- GET /api/session/:id/stream: SSE stream of agent steps (tool calls, results, hints, done/error).<br>- POST /api/session/:id/next-hint: asks the agent (via send()) for the next hint level.<br>- Assignments live in assignments/&lt;id&gt;/ (tests.json plus the buggy starter program, copied from the reference fixtures).<br>- Static web UI in web/ (plain HTML/CSS/JS served by Express): assignment picker, code box, test results table, live agent step feed, hint cards, &quot;next hint&quot; button.<br><br>Known Cline SDK quirks the plan must account for:<br>1. Node 22+ is required (this machine has Node 24).<br>2. tsconfig needs &quot;moduleResolution&quot;: &quot;Bundler&quot; (with &quot;module&quot;: &quot;ESNext&quot;).<br>3. The read_files tool needs absolute paths, so prompts to the agent must give absolute sandbox paths.<br>4. A follow-up cline.send() only works if the session was started with start({ interactive: true }).<br>5. run_commands runs on the host, not in a container, so the allow-list in requestToolApproval is the only protection. It must be strict (only the exact build/run commands for the assignment inside the sandbox dir) and the server&#039;s own runner must use timeouts.<br><br>The build will happen in these steps (one Cline prompt each), so structure the plan around them:<br>- Step 01: Express + TS server skeleton and the sandboxed code runner (Python and C, build + run with timeouts, output trimmed and compared against assignments/&lt;id&gt;/tests.json). Copy fixtures into assignments/. npm scripts. A check script proving correct pass/fail on the 3 buggy programs. Stub POST /api/session returning test results. No agent, no UI.<br>- Step 02: the HintLab agent module with the Cline SDK (ClineCore, toolPolicies, allow-list approval, give_hint tool, interactive sessions, next-hint via send()), plus a mock-provider test like the sdk-check mock.<br>- Step 03: SSE streaming and the real session endpoints.<br>- Step 04: the web UI.<br>- Step 05: end-to-end test with the real provider, safety checks (edit tools blocked, non-allow-listed commands blocked, no corrected code in hints), and a README with demo steps.<br><br>For each step give: goal, files to create or change, key implementation details, how to verify it, and risks. Also include the expected test results for each fixture (which tests should pass and which should fail with the buggy code, and why). End with a short list of open questions.<br><br>Your final answer must be the complete plan as Markdown, ready to be saved as PLAN.md at the repo root.</div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="message-header">
+        <div class="avatar assistant">
+          A
+        </div>
+        <span class="role">Assistant</span>
+        <span class="model">cline-pass/deepseek-v4-pro</span>
+      </div>
+      <div class="content">
+        
+<div>I&#039;ll start by exploring the repository structure and reading all the reference files to understand what I&#039;m planning around.</div>
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>cd /Users/prakharagarwal/ClineHackathon &amp;&amp; find . -type f -not -path &#039;./node_modules/*&#039; -not -path &#039;./.git/*&#039; | sort</code>
+    </div>
+  
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/reference/fixtures/sum-of-list/main.py&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/reference/fixtures/sum-of-list/tests.json&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/reference/fixtures/is-palindrome/main.py&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/reference/fixtures/is-palindrome/tests.json&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/reference/fixtures/average-marks/main.c&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/reference/fixtures/average-marks/tests.json&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/reference/fixtures/check_fixtures.py&quot;
+    }
+  ]
+}</div>
+    </div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="tool-block">
+      <div class="tool-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>read_files</span>
+        <span class="success">Success</span>
+      </div>
+      <div class="tool-content">{
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/reference/sdk-check/01-agent-mock.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/reference/sdk-check/02-clinecore-mock.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/reference/sdk-check/03-real-provider-smoke.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/reference/sdk-check/README.md&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/reference/sdk-check/mock-openai.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/reference/sdk-check/package.json&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/reference/sdk-check/run-mock.ts&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/reference/sdk-check/tsconfig.json&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/prompts/00-plan.md&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/sessions/00-plan.json&quot;
+    },
+    {
+      &quot;path&quot;: &quot;/Users/prakharagarwal/ClineHackathon/cline-proof/sessions/00-plan.timing.txt&quot;
+    }
+  ]
+}</div>
+    </div>
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+
+    <div class="command-block">
+      <div class="command-label">Command 1</div>
+      <code>node --version &amp;&amp; npm --version</code>
+    </div>
+  
+
+    <div class="command-block">
+      <div class="command-label">Command 2</div>
+      <code>python3 --version; gcc --version | head -1; echo &#039;---&#039;; ls -la /Users/prakharagarwal/ClineHackathon</code>
+    </div>
+  
+      </div>
+    </div>
+
+    <div class="message assistant">
+      <div class="content" style="padding-left: 2.75rem;">
+        
+<div>I&#039;ve read all the reference material, the fixtures, the SDK snippets, and confirmed the environment (Node v24.16.0, Python 3.13.7, clang/gcc 16.0.0, empty repo root except <code>cline-proof/</code>). Here is the complete build plan, ready to be saved as <code>PLAN.md</code>.<br><br>---<br><br># HintLab — Build Plan<br><br>&gt; A debugging tutor for programming labs. A student pastes code and picks an assignment; a Cline‑SDK agent runs it against the assignment&#039;s test cases in a temp sandbox, diagnoses the failure, and delivers <strong>tiered hints</strong> (level 1 nudge → level 2 where to look → level 3 concept). It must <strong>never</strong> write or reveal the fix.<br><br>## 1. Architecture overview<br><br><pre><code>Browser (web/) ──POST /api/session──────────────► Express/TS server (src/)<br>   │            { assignmentId, code }              │<br>   │◄──────────── { sessionId, testResults } ───────┤<br>   │                                                ├─► Sandbox runner (src/runner.ts)<br>   │◄──GET /api/session/:id/stream (SSE)────────────┤     temp dir, build+run, trim, compare<br>   │      tool steps · results · hints · done/error │<br>   │                                                ├─► ClineCore agent (src/agent.ts)<br>   │◄──POST /api/session/:id/next-hint──────────────┤     toolPolicies + allow-list + give_hint<br>   │      (agent via cline.send)                    │<br>                                                    └─► assignments/&lt;id&gt;/tests.json (+starter)</code></pre><br><br>- <strong>Server</strong>: Express + TypeScript, ESM (<code>&quot;type&quot;: &quot;module&quot;</code>), run via Node&#039;s built-in type stripping (<code>node --experimental-strip-types</code>) so there is no bundler/build step in the runtime path (matches how <code>sdk-check</code> was run).<br>- <strong>Agent</strong>: <code>@cline/sdk</code> 0.0.90 with <code>ClineCore</code>, <code>zod</code> 4.<br>- <strong>Sandbox</strong>: a fresh temp dir per session (e.g. <code>os.tmpdir()/hintlab-&lt;id&gt;</code>). The server&#039;s own runner executes the assignment&#039;s build/run commands there with timeouts.<br>- <strong>Safety</strong>: <code>editor</code>/<code>apply_patch</code> disabled; <code>run_commands</code> gated by a strict shell allow-list in <code>requestToolApproval</code>; hints only through a custom <code>give_hint</code> tool; <code>run_commands</code> runs on the host, so the allow-list + timeouts are the only protection.<br><br>## 2. Repository layout (all new, outside <code>cline-proof/</code>)<br><br><pre><code>/Users/prakharagarwal/ClineHackathon<br>├── PLAN.md<br>├── package.json<br>├── tsconfig.json<br>├── .gitignore                # node_modules, dist, .env, *.tmp<br>├── .env.example<br>├── assignments/              # copied from cline-proof/reference/fixtures (read-only source)<br>│   ├── sum-of-list/{tests.json, main.py}<br>│   ├── is-palindrome/{tests.json, main.py}<br>│   └── average-marks/{tests.json, main.c}<br>├── src/<br>│   ├── server.ts             # bootstrap: env, create app, listen<br>│   ├── app.ts                # express app + routes + static web/<br>│   ├── config.ts             # env loading (provider/model/api key/port/timeouts)<br>│   ├── types.ts              # shared TS types (Assignment, Test, TestResult, Hint, Session…)<br>│   ├── assignments.ts        # list assignments, load/validate tests.json<br>│   ├── sandbox.ts            # temp dir create/copy/write student code<br>│   ├── runner.ts             # build + run + trim + compare (Python &amp; C)<br>│   ├── agent.ts              # HintLab agent (ClineCore, toolPolicies, allow-list, give_hint)<br>│   ├── sessions.ts           # in-memory session store + event bus<br>│   └── sse.ts                # SSE helper (write event, heartbeat, replay)<br>├── scripts/<br>│   ├── copy-assignments.mjs  # copy fixtures → assignments/<br>│   ├── check-runner.ts       # prove pass/fail on the 3 buggy programs (exit ≠0 on mismatch)<br>│   ├── agent-mock.test.ts    # mock-provider agent test (no API key)<br>│   └── e2e-safety.ts         # real-provider e2e + safety assertions<br>└── web/<br>    ├── index.html<br>    ├── style.css<br>    └── app.js</code></pre><br><br>## 3. Environment &amp; SDK quirk checklist<br><br>| # | Quirk | Where handled |<br>|---|-------|---------------|<br>| 1 | Node 22+ required (machine has v24.16.0) | <code>package.json</code> <code>engines</code> ≥22; document; no action needed beyond confirming |<br>| 2 | <code>moduleResolution: &quot;Bundler&quot;</code> + <code>module: &quot;ESNext&quot;</code> | <code>tsconfig.json</code> (copy the sdk-check tsconfig: <code>target ES2022</code>, <code>strict</code>, <code>skipLibCheck</code>, <code>noEmit</code>, <code>allowImportingTsExtensions</code>, <code>types:[&quot;node&quot;]</code>) |<br>| 3 | <code>read_files</code> needs absolute paths | prompt builder injects <code>path.resolve(sandboxDir)</code> for code + tests |<br>| 4 | <code>send()</code> follow-up only works with <code>interactive: true</code> | <code>agent.ts</code> always calls <code>start({ interactive: true, … })</code> |<br>| 5 | <code>run_commands</code> runs on the host | allow-list in <code>requestToolApproval</code>; server runner uses timeouts; allow-list regexes forbid shell metacharacters &amp; <code>/</code> outside the fixed prefix |<br><br>## 4. Fixture analysis — expected test results<br><br><strong>sum-of-list</strong> (<code>main.py</code>) — bug: <code>for i in range(1, len(nums))</code> starts at index 1, skipping <code>nums[0]</code>.<br>| test | input | expected | buggy got | result |<br>|---|---|---|---|---|<br>| basic | <code>1 2 3</code> | <code>6</code> | <code>5</code> | ❌ FAIL |<br>| single | <code>7</code> | <code>7</code> | <code>0</code> | ❌ FAIL |<br>| negatives | <code>-4 10 -1</code> | <code>5</code> | <code>9</code> | ❌ FAIL |<br>| first-only-big | <code>100 1</code> | <code>101</code> | <code>1</code> | ❌ FAIL |<br><br>→ <strong>0/4 pass.</strong> Root cause: off-by-one (loop should start at <code>range(0, len(nums))</code>).<br><br><strong>is-palindrome</strong> (<code>main.py</code>) — bug: compares raw string, never ignores case/spaces.<br>| test | input | expected | buggy got | result |<br>|---|---|---|---|---|<br>| simple | <code>racecar</code> | <code>YES</code> | <code>YES</code> | ✅ PASS |<br>| not | <code>hello</code> | <code>NO</code> | <code>NO</code> | ✅ PASS |<br>| mixed-case | <code>Madam</code> | <code>YES</code> | <code>NO</code> | ❌ FAIL |<br>| spaces | <code>never odd or even</code> | <code>YES</code> | <code>NO</code> | ❌ FAIL |<br><br>→ <strong>2/4 pass.</strong> Root cause: missing normalization (lowercase + strip spaces before reversing).<br><br><strong>average-marks</strong> (<code>main.c</code>) — bug: <code>float avg = sum / n;</code> is integer division.<br>| test | input | expected | buggy got | result |<br>|---|---|---|---|---|<br>| even | <code>2\n10 20</code> | <code>15.00</code> | <code>15.00</code> | ✅ PASS |<br>| fraction | <code>3\n1 2 2</code> | <code>1.67</code> | <code>1.00</code> | ❌ FAIL |<br>| half | <code>2\n3 4</code> | <code>3.50</code> | <code>3.00</code> | ❌ FAIL |<br><br>→ <strong>1/3 pass.</strong> Root cause: integer truncation (needs <code>(float)sum / n</code>).<br><br>&gt; Note the &quot;correct&quot; hint for each: sum-of-list → off-by-one; is-palindrome → normalization; average-marks → float division. These tags feed <code>give_hint.tag</code>.<br><br>---<br><br>## 5. Step-by-step build plan<br><br>### Step 01 — Server skeleton + sandboxed code runner<br><br><strong>Goal</strong>: Stand up Express + TS (ESM), copy fixtures into <code>assignments/</code>, implement the sandboxed runner (Python + C, build + run, timeouts, trim + compare against <code>tests.json</code>), and stub <code>POST /api/session</code>. No agent, no UI.<br><br><strong>Files to create/change</strong><br>- <code>package.json</code> — deps: <code>express</code> (^5), <code>@cline/sdk</code> (^0.0.90), <code>zod</code> (^4.6.5); dev: <code>typescript</code> (^5.9), <code>@types/node</code>, <code>@types/express</code>. <code>&quot;type&quot;:&quot;module&quot;</code>, <code>&quot;engines&quot;:{&quot;node&quot;:&quot;&gt;=22&quot;}</code>. Scripts:<br>  - <code>copy-assignments</code>: <code>node scripts/copy-assignments.mjs</code><br>  - <code>check-runner</code>: <code>node --experimental-strip-types --no-warnings scripts/check-runner.ts</code><br>  - <code>typecheck</code>: <code>tsc --noEmit</code><br>  - <code>dev</code>: <code>node --experimental-strip-types --no-warnings --env-file=.env src/server.ts</code><br>- <code>tsconfig.json</code> — as in quirk #2.<br>- <code>.gitignore</code>, <code>.env.example</code> (PORT, and provider fields for later).<br>- <code>scripts/copy-assignments.mjs</code> — <code>cp</code> each dir under <code>cline-proof/reference/fixtures/</code> into <code>assignments/</code> (idempotent, skip the <code>check_fixtures.py</code> helper and any compiled <code>main</code> binary).<br>- <code>src/config.ts</code> — <code>PORT</code> (default 3000), timeouts (<code>RUN_TIMEOUT_MS=5000</code>, <code>BUILD_TIMEOUT_MS=10000</code>).<br>- <code>src/types.ts</code> — <code>Assignment { id, language, statement, build?, run, tests[] }</code>, <code>TestCase { name, input, expected }</code>, <code>TestResult { name, passed, expected, actual?, error?, timedOut? }</code>, <code>RunReport { buildOk, buildError?, results[] }</code>.<br>- <code>src/assignments.ts</code> — <code>listAssignments()</code> (scan <code>assignments/*/tests.json</code>), <code>loadAssignment(id)</code> (validate id ∈ known set, reject <code>..</code>/slashes), zod-validate shape.<br>- <code>src/sandbox.ts</code> — <code>createSandbox(assignmentId, code)</code>: <code>fs.mkdtempSync(path.join(os.tmpdir(), &quot;hintlab-&quot;))</code>, copy template, overwrite the code file (<code>main.py</code> for python, <code>main.c</code> for c).<br>- <code>src/runner.ts</code> — <code>runAssignment(assignment, sandboxDir)</code>:<br>  - if <code>build</code> present: run it in <code>sandboxDir</code> (timeout, capture stderr); non-zero ⇒ build failure.<br>  - for each test: run <code>run</code> command with test <code>input</code> on stdin; <code>got = stdout.strip()</code>; <code>passed = got === expected</code>; timeout ⇒ <code>timedOut</code>.<br>  - <strong>Key detail</strong>: use <code>child_process.spawn(cmd, { shell:true, cwd: sandboxDir, env: minimal, timeout })</code>, write <code>input</code> to <code>child.stdin</code>, capture <code>stdout</code>/<code>stderr</code>; on timeout kill the process <strong>group</strong> (<code>detached:true</code> + <code>process.kill(-pid)</code>) to avoid orphaned children (e.g. a hung <code>while True</code>). Trim with <code>.strip()</code> exactly as <code>check_fixtures.py</code> does; compare exactly.<br>- <code>src/app.ts</code> + <code>src/server.ts</code> — <code>GET /api/assignments</code> (list + statement + starter source for prefilling), <code>POST /api/session</code> stub: validate <code>{ assignmentId, code }</code>, create sandbox, run tests, return <code>{ sessionId, testResults }</code> (sessionId placeholder; agent wired in Step 02/03).<br>- <code>scripts/check-runner.ts</code> — run the runner against all 3 assignments using the buggy starter code, print the table, and <strong>exit non-zero if the pass/fail set deviates</strong> from §4.<br><br><strong>How to verify</strong><br>- <code>npm install</code> clean; <code>npm run copy-assignments</code> populates <code>assignments/</code>.<br>- <code>npm run check-runner</code> prints exactly the §4 results and exits 0.<br>- <code>npm run typecheck</code> passes.<br>- <code>npm run dev</code> then <code>curl -s -X POST localhost:3000/api/session -H &#039;content-type: application/json&#039; -d &#039;{&quot;assignmentId&quot;:&quot;sum-of-list&quot;,&quot;code&quot;:&quot;nums=list(map(int,input().split()));print(sum(nums))&quot;}&#039;</code> → all 4 tests <strong>pass</strong> (proves the runner isn&#039;t just always-failing); re-run with the buggy code → all 4 fail.<br><br><strong>Risks</strong><br>- Shell command handling (use <code>shell:true</code> for the trusted <code>tests.json</code> commands, but always with <code>cwd</code> inside the sandbox).<br>- Timeout/orphan cleanup must actually kill the process group.<br>- Path traversal via <code>assignmentId</code> — validate against the known directory list, never interpolate raw input into a path.<br>- Language dispatch (python vs c) must pick the right filename (<code>main.py</code> vs <code>main.c</code>).<br>- <code>.strip()</code> semantics must match <code>check_fixtures.py</code> exactly (no <code>lower()</code>, no whitespace collapse).<br><br>---<br><br>### Step 02 — HintLab agent module (Cline SDK)<br><br><strong>Goal</strong>: Implement <code>src/agent.ts</code> using <code>ClineCore</code>, with disabled edit tools, an allow-list approval callback, the <code>give_hint</code> tool, interactive sessions, and <code>next-hint</code> via <code>send()</code>. Add a mock-provider test (no API key) mirroring <code>sdk-check</code>.<br><br><strong>Files to create/change</strong><br>- <code>src/agent.ts</code> — the core of the product:<br>  - Singleton <code>cline = await ClineCore.create({ clientName: &quot;hintlab&quot;, backendMode: &quot;local&quot; })</code> created once at startup.<br>  - <code>giveHint = createTool({ name: &quot;give_hint&quot;, description: &quot;Show exactly one hint… level 1 nudge, 2 location, 3 concept. Never include corrected code.&quot;, inputSchema: z.object({ level: z.number().int().min(1).max(3), tag: z.string(), text: z.string() }), execute })</code> — <code>execute</code> records the hint into the session and returns <code>{ shown: true }</code>.<br>  - <strong>Allow-list</strong> built per assignment from its exact <code>build</code>/<code>run</code> strings, e.g. for python: <code>/^python3 main\.py$/</code>, <code>/^python3 main\.py &lt; [\w.-]+$/</code>, <code>/^(echo|printf) [\w .-]+ \| python3 main\.py$/</code>; for C: <code>/^gcc -Wall -O0 main\.c -o main$/</code>, <code>/^\.\/main$/</code>, <code>/^\.\/main &lt; [\w.-]+$/</code>. Also allow <code>cat &lt;sandbox-relative file&gt;</code>. <strong>Hardening vs the reference</strong>: replace the reference&#039;s <code>.*</code> with <code>[\w .-]+</code> so <code>;</code>, <code>&amp;</code>, <code>|</code>, backticks, <code>$()</code>, <code>&gt;</code> and <code>/</code> are impossible in the variable part, and anchor with <code>^…$</code>. (The reference <code>echo .* | …</code> regex would match <code>echo x; rm -rf / | python3 main.py</code> — do not copy that gap.)<br>  - <code>requestToolApproval(req)</code>: read <code>req.input.commands</code>, map each to string, require <strong>all</strong> to match an allow-list entry; return <code>{ approved: true }</code> or <code>{ approved: false, reason: &quot;Command not on the HintLab allow-list&quot; }</code>. Reject empty command lists.<br>  - <code>startSession(session, assignment, testResults)</code>:<br>    - <code>prompt</code> includes <strong>absolute</strong> <code>sandboxDir</code> paths for the code and <code>tests.json</code>, the statement, and the already-computed <code>testResults</code>, plus: &quot;Diagnose the root cause, then call <code>give_hint</code> once with level 1. Use absolute paths for <code>read_files</code>. Never write or show corrected code.&quot;<br>    - <code>config</code>: <code>{ sessionId, providerId, modelId, apiKey, baseUrl, systemPrompt, cwd: sandboxDir, workspaceRoot: sandboxDir, enableTools: true, enableSpawnAgent: false, enableAgentTeams: false, extraTools: [giveHint] }</code>.<br>    - <code>toolPolicies</code>: <code>read_files</code>/<code>search_codebase</code> autoApprove true; <code>run_commands</code> autoApprove <strong>false</strong>; <code>editor</code>/<code>apply_patch</code> enabled false; <code>fetch_web_content</code> enabled false; <code>give_hint</code> autoApprove true.<br>    - <code>start({ interactive: true, prompt, config, toolPolicies, capabilities: { requestToolApproval } })</code>.<br>  - <code>cline.subscribe(...)</code> mapping (<code>agent_event</code> → <code>payload.event</code> with <code>content_start</code>/<code>content_end</code> for <code>contentType</code> &quot;tool&quot;/&quot;text&quot;, plus lifecycle/usage/error) into per-session events; in Step 02 this just logs/collects.<br>  - <code>nextHint(session)</code>: track <code>lastHintLevel</code> from <code>give_hint</code>; call <code>cline.send({ sessionId, prompt: &quot;The student is still stuck. Give the next hint level (currently level N).&quot; })</code>.<br>  - <code>systemPrompt</code>: &quot;You are HintLab, a programming tutor. You may read files and run allow-listed commands. You must never write or show corrected code. Deliver help only through the <code>give_hint</code> tool.&quot;<br>- <code>scripts/agent-mock.test.ts</code> — port <code>mock-openai.ts</code> + <code>02-clinecore-mock.ts</code> into a test that asserts: (a) <code>give_hint</code> executes and records a hint; (b) an allow-listed command is approved; (c) a non-allow-listed command (<code>rm -rf /tmp/x</code>, <code>cat /etc/passwd</code>) is <strong>blocked</strong> (<code>approved:false</code>) and not executed; (d) <code>editor</code>/<code>apply_patch</code> are absent from the model&#039;s tool list; (e) <code>send()</code> follow-up works (interactive session).<br><br><strong>How to verify</strong><br>- <code>npm run typecheck</code> passes.<br>- <code>node --experimental-strip-types scripts/agent-mock.test.ts</code> runs with no API key and all assertions pass.<br>- (Optional, with a real key) a <code>smoke:real</code> equivalent of <code>03-real-provider-smoke.ts</code> produces one hint for <code>sum-of-list</code>.<br><br><strong>Risks</strong><br>- Exact built-in tool names/IDs to disable in <code>@cline/sdk</code> 0.0.90 — need to enumerate <strong>all</strong> write-capable tools (<code>editor</code>, <code>apply_patch</code>, and possibly <code>write_to_file</code>) and all network tools; missing one = a way for the model to mutate files.<br>- Allow-list too strict ⇒ agent can&#039;t re-run tests; too loose ⇒ sandbox escape. Pre-write per-test input files (<code>tests/input-&lt;name&gt;.txt</code>) in the sandbox so the agent can use <code>&lt; tests/input-basic.txt</code> instead of inventing pipes.<br>- <code>give_hint</code> must auto-approve so it&#039;s never blocked, but its <code>execute</code> is the only hint sink.<br>- The model might bypass <code>give_hint</code> and print an answer/code as plain text — system prompt must forbid this, and the UI should surface only <code>give_hint</code> payloads as &quot;hints&quot;.<br>- <code>send()</code> silently no-ops without <code>interactive: true</code> — asserted in the mock test.<br><br>---<br><br>### Step 03 — SSE streaming + real session endpoints<br><br><strong>Goal</strong>: Wire the agent into HTTP: <code>POST /api/session</code> creates the session, runs tests, and <strong>starts the agent in the background</strong>; <code>GET /api/session/:id/stream</code> streams agent steps/hints; <code>POST /api/session/:id/next-hint</code> calls <code>send()</code>.<br><br><strong>Files to create/change</strong><br>- <code>src/sessions.ts</code> — in-memory <code>Map&lt;sessionId, Session&gt;</code> where <code>Session = { id, assignmentId, code, sandboxDir, testResults, status, hints[], steps[], subscribers:Set&lt;SSE client&gt;, lastHintLevel, agentSessionId }</code>. Include a TTL/cleanup.<br>- <code>src/sse.ts</code> — <code>openSse(res)</code> (headers <code>text/event-stream</code>, <code>cache-control: no-cache</code>, <code>connection: keep-alive</code>), <code>sendEvent(res, name, data)</code> → <code>event: &lt;name&gt;\ndata: &lt;json&gt;\n\n</code>, a heartbeat <code>: ping</code> every ~15s, and buffered-event <strong>replay</strong> for late joiners.<br>- <code>src/app.ts</code> (routes):<br>  - <code>POST /api/session</code>: zod-validate body; create sandbox; run tests (Step 01 runner); store session; <strong>fire-and-forget</strong> <code>agent.startSession(...)</code> (subscribe first so no events are missed); return <code>{ sessionId, testResults }</code> immediately.<br>  - <code>GET /api/session/:id/stream</code>: register the SSE client, replay buffered steps/hints, stream live events (<code>tool_start</code>, <code>tool_result</code>, <code>hint</code>, <code>text</code>, <code>status</code>, <code>done</code>, <code>error</code>).<br>  - <code>POST /api/session/:id/next-hint</code>: if the agent is still running return <code>409</code>; else call <code>agent.nextHint()</code> and let the resulting hint arrive over SSE.<br>  - Map agent events: <code>content_start</code>/<code>content_end</code> (contentType <code>tool</code> → tool name + input/output/error; contentType <code>text</code> → text), lifecycle → <code>done</code>/<code>error</code>. <code>give_hint</code> execute → <code>hint</code> event.<br>- <code>src/server.ts</code> — create the <code>ClineCore</code> singleton before listening; start listening.<br><br><strong>How to verify</strong><br>- <code>npm run dev</code>; <code>POST /api/session</code> returns <code>testResults</code> instantly; <code>curl -N localhost:3000/api/session/&lt;id&gt;/stream</code> shows tool calls then a level-1 hint; <code>POST /api/session/&lt;id&gt;/next-hint</code> yields a level-2 hint on the same stream.<br>- Reconnect a second stream after completion → sees replayed history then <code>done</code>.<br>- Kill-path: an invalid provider config produces an <code>error</code> event on the stream, not a hung request.<br><br><strong>Risks</strong><br>- SSE lifecycle/leaks (client disconnect cleanup), and memory growth (session TTL).<br>- Ordering: subscribe to <code>cline</code> <strong>before</strong> <code>start()</code> resolves/starts producing events.<br>- Concurrency: only one in-flight <code>send()</code> per session; queue or 409 extra <code>next-hint</code> requests.<br>- Mapping the SDK&#039;s event payload shape (<code>agent_event.payload.event</code> with <code>content_start</code>/<code>content_end</code>) exactly — see <code>02</code>/<code>03</code> for the field names (<code>toolName</code>, <code>input</code>, <code>output</code>, <code>error</code>, <code>contentType</code>).<br><br>---<br><br>### Step 04 — Web UI<br><br><strong>Goal</strong>: Plain HTML/CSS/JS UI (no build step) served by Express: assignment picker, code box, test-results table, live agent step feed, hint cards, &quot;next hint&quot; button.<br><br><strong>Files to create/change</strong><br>- <code>web/index.html</code>, <code>web/style.css</code>, <code>web/app.js</code>.<br>- <code>src/app.ts</code> — add <code>app.use(express.static(&quot;web&quot;))</code> and ensure <code>GET /api/assignments</code> returns <code>{ id, language, statement, starter }</code> (starter = buggy <code>main.py</code>/<code>main.c</code>) so the picker can prefill.<br><br><strong>Key implementation details</strong><br>- Picker: fetch <code>/api/assignments</code>, populate <code>&lt;select&gt;</code>, show statement, prefill the textarea with the starter.<br>- &quot;Run &amp; get hints&quot;: <code>POST /api/session { assignmentId, code }</code> → render a test-results table (name, expected, actual, ✅/❌, optional error), then open <code>EventSource(&quot;/api/session/&lt;id&gt;/stream&quot;)</code>.<br>- Live feed: append a step line per <code>tool_start</code>/<code>tool_result</code>/<code>text</code>; render <code>hint</code> events as <strong>hint cards</strong> (level badge, tag, text). Show a spinner while <code>status !== done</code>.<br>- &quot;Next hint&quot; button: <code>POST next-hint</code>, disabled while the agent is busy; the new hint arrives over the existing SSE.<br>- State machine: sessionId comes back from <code>POST</code> <strong>before</strong> the stream opens; handle <code>done</code>/<code>error</code>; friendly message on validation errors (empty code, unknown assignment).<br><br><strong>How to verify</strong><br>- Open the UI, pick <code>sum-of-list</code>, submit the buggy code → see 4 failed tests, live tool steps, a level-1 hint card; click &quot;next hint&quot; → level-2 card.<br>- Submit empty code / bogus id → friendly error, no crash.<br>- Confirm no corrected code appears anywhere in the UI.<br><br><strong>Risks</strong><br>- <code>EventSource</code> ordering (must have <code>sessionId</code> first).<br>- Same-origin assumed (no CORS); confirm port matches.<br>- Keep raw agent reasoning/text minimal in the UI (noise + risk of leaking code); prefer tool steps + hint cards.<br><br>---<br><br>### Step 05 — End-to-end test with real provider + safety checks + README<br><br><strong>Goal</strong>: Prove the full loop against a real model, verify the three safety guarantees, and document the demo.<br><br><strong>Files to create/change</strong><br>- <code>scripts/e2e-safety.ts</code> — with <code>PROVIDER_ID</code>/<code>MODEL_ID</code>/<code>API_KEY</code>/<code>BASE_URL</code>, run a session against each of the 3 assignments; assert <code>testResults</code> match §4 and at least one level-1 hint is produced; exercise <code>next-hint</code> to level 2.<br>- <code>scripts/</code> safety assertions (some in mock test, some in e2e):<br>  1. <strong>Edit tools blocked</strong> — assert <code>editor</code>/<code>apply_patch</code> (and <code>write_to_file</code> if present) are never offered/executed (watch tool events; fail the run if any edit tool fires).<br>  2. <strong>Non-allow-listed commands blocked</strong> — attempt <code>rm -rf …</code>, <code>cat /etc/passwd</code>, <code>ls /</code> → assert <code>approved:false</code> and no execution (mock test covers deterministically).<br>  3. <strong>No corrected code in hints</strong> — scan each <code>give_hint.text</code> for code markers (<code>for </code>, <code>def </code>, <code>printf</code>, <code>range(</code>, <code>(float)</code>, <code>.lower()</code>, braces/<code>;</code>) and assert it doesn&#039;t contain a fix; plus manual review.<br>- <code>README.md</code> — overview, architecture diagram, stack, setup (<code>npm install</code>, <code>cp .env.example .env</code>, <code>npm run copy-assignments</code>), run instructions, endpoints table, demo walkthrough (pick assignment → paste buggy code → watch tests fail → hints 1/2/3 → never shows the fix), safety model explanation, and how to run tests (<code>check-runner</code>, <code>agent-mock.test</code>, <code>e2e-safety</code>).<br><br><strong>How to verify</strong><br>- <code>npm run e2e</code> (with a real key) passes: correct test results, ≥1 hint, next-hint works, no edit tool fired, no blocked-command execution, no code in hints.<br>- README steps are copy-paste runnable on a fresh clone.<br><br><strong>Risks</strong><br>- Real-model nondeterminism (may not call <code>give_hint</code>, may choose wrong level, may try to write code) → use temperature 0, a strong system prompt, and tolerant assertions (&quot;≥1 hint&quot;, not exact text); add retries.<br>- Safety check #3 is heuristic — combine automated markers with a mandatory human review of any hint text before demo.<br>- Cost/time of the real-provider run.<br><br>---<br><br>## 6. Open questions<br><br>1. <strong>Provider + model</strong> for the real run (Anthropic vs OpenRouter vs Groq) and the exact <code>MODEL_ID</code>; should <code>npm run dev</code> default to the mock provider when no key is set?<br>2. <strong>Built-in tool inventory</strong>: the exact write-capable and network tool names exposed by <code>@cline/sdk</code> 0.0.90 (<code>editor</code>, <code>apply_patch</code>, <code>write_to_file</code>?, <code>fetch_web_content</code>, spawn/team tools) — confirm the full disable list in Step 02.<br>3. <strong>Hint progression policy</strong>: strict 1→2→3 increment, or may the agent choose? Behavior after level 3 (terminal message)?<br>4. <strong>Persistence</strong>: is the in-memory session store + TTL acceptable for the hackathon demo, or is disk/redis needed?<br>5. <strong>Server runner vs allow-list</strong>: the server&#039;s own runner runs <code>tests.json</code> commands directly (trusted, no allow-list) — the allow-list only gates the *agent&#039;s* <code>run_commands</code>. Confirm this split is intended.<br>6. <strong>ClineCore lifecycle</strong>: one shared singleton (preferred) vs per-session instance, and how <code>send()</code> references the correct session.<br>7. <strong>UI verbosity</strong>: show agent reasoning/raw text, or only tool steps + hint cards (recommended: the latter, to avoid leaking the fix)?<br>8. <strong>Timeout budget</strong>: acceptable max per test run (5s?) and per agent run (e.g. 120s) before the session is marked errored.<br><br>---<br><br>This plan is complete and ready to save as <code>PLAN.md</code>. Once you approve it (switch me to Act mode), I&#039;ll begin with Step 01.</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Dots Navigation Bar -->
+  <nav class="dots-nav">
+    <button class="dots-nav-btn" onclick="scrollToMessage(0)" title="Scroll to top">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+    </button>
+    <div class="dots-container">
+      
+        <div class="dot user" data-index="0" onclick="scrollToMessage(0)" title="Message 1: user"></div>
+      
+        <div class="dot assistant" data-index="1" onclick="scrollToMessage(1)" title="Message 2: assistant"></div>
+      
+        <div class="dot assistant" data-index="2" onclick="scrollToMessage(2)" title="Message 3: assistant"></div>
+      
+        <div class="dot assistant" data-index="3" onclick="scrollToMessage(3)" title="Message 4: assistant"></div>
+      
+        <div class="dot assistant" data-index="4" onclick="scrollToMessage(4)" title="Message 5: assistant"></div>
+      
+    </div>
+    <button class="dots-nav-btn" onclick="scrollToMessage(4)" title="Scroll to bottom">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+  </nav>
+  
+  <script>
+    let currentIndex = 0;
+    const messages = document.querySelectorAll('.message');
+    const dots = document.querySelectorAll('.dot');
+    
+    function scrollToMessage(index) {
+      if (index >= 0 && index < messages.length) {
+        messages[index].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        updateActiveDot(index);
+      }
+    }
+    
+    function updateActiveDot(index) {
+      dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === index);
+      });
+      currentIndex = index;
+    }
+    
+    // Track scroll position to update active dot
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const index = Array.from(messages).indexOf(entry.target);
+          if (index !== -1) {
+            updateActiveDot(index);
+          }
+        }
+      });
+    }, { threshold: 0.5, rootMargin: '-80px 0px -50% 0px' });
+    
+    messages.forEach(msg => observer.observe(msg));
+    
+    // Initialize first dot as active
+    if (dots.length > 0) {
+      dots[0].classList.add('active');
+    }
+  </script>
+</body>
+</html>

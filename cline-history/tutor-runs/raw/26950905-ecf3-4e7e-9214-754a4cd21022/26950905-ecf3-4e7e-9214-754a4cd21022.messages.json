@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "updated_at": "2026-10-04T08:34:06.120Z",
+  "agent": "lead",
+  "sessionId": "26950905-ecf3-4e7e-9214-754a4cd21022",
+  "origin": {
+    "source": "core",
+    "mode": "user",
+    "sessionId": "26950905-ecf3-4e7e-9214-754a4cd21022"
+  },
+  "messages": []
+}
