@@ -12,10 +12,13 @@
     "start": "tsx src/server.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "test:runner": "tsx scripts/check-runner.ts"
+    "test:runner": "tsx scripts/check-runner.ts",
+    "check:agent": "tsx scripts/check-agent.ts"
   },
   "dependencies": {
-    "express": "^5.2.1"
+    "@cline/sdk": "^0.0.90",
+    "express": "^5.2.1",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

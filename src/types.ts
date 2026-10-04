@@ -1,3 +1,5 @@
+import type { Response } from "express";
+
 export type Language = "python" | "c";
 
 export interface TestCase {
@@ -54,4 +56,44 @@ export interface RunnerOptions {
   maxOutputBytes?: number;
   /** Remove the temp sandbox dir after the run completes. Defaults to false. */
   cleanup?: boolean;
+}
+
+export type HintLevel = 1 | 2 | 3;
+
+/** A single hint delivered to the student via the give_hint tool (already guarded). */
+export interface Hint {
+  level: HintLevel;
+  tag?: string;
+  text: string;
+  at: string;
+}
+
+/** A recorded SSE event that can be replayed to late-joining clients. */
+export interface SessionEvent {
+  name: string;
+  data: unknown;
+  at: number;
+}
+
+/** In-memory session record. */
+export interface Session {
+  id: string;
+  assignmentId: string;
+  language: Language;
+  statement: string;
+  /** Temp workdir containing main.py/main.c + tests.json (owned by the runner). */
+  workdir: string;
+  testResults: RunResult;
+  hints: Hint[];
+  events: SessionEvent[];
+  status: string;
+  /** True while an agent turn (start/send) is in flight. */
+  busy: boolean;
+  /** The hint level the server is currently asking the agent for. */
+  currentHintLevel: number;
+  /** The SDK session id (equals this.id since we pass config.sessionId). */
+  agentSessionId?: string;
+  sseClients: Set<Response>;
+  createdAt: number;
+  lastActiveAt: number;
 }
