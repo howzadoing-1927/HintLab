@@ -205,6 +205,91 @@ export function cleanupSandbox(sandboxDir: string): void {
   }
 }
 
+/** A safe file-safe slug for a test name: lowercase alphanumerics and hyphens. */
+export function slugifyTestName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/** Result of running tests inside an already-created workdir. */
+export interface RunInWorkdirResult {
+  build: BuildResult | null;
+  tests: TestResult[];
+  passed: number;
+  failed: number;
+  total: number;
+}
+
+/**
+ * Run the assignment's build (if any) and test cases against the code that is
+ * already present in `workdir` (the agent's sandbox). Uses the same hardened
+ * `spawnCommand` path as `runAssignment` — process-group kill, per-test timeouts,
+ * and a minimal env with HOME set to the temp dir — so student code run by the
+ * agent can never read server env vars or credentials. Returns per-test input,
+ * expected, got, stderr, signal and pass/fail.
+ */
+export async function runTestsInWorkdir(
+  assignment: Assignment,
+  workdir: string,
+  testName?: string,
+): Promise<RunInWorkdirResult> {
+  let build: BuildResult | null = null;
+  if (assignment.build) {
+    const b = await spawnCommand(assignment.build, {
+      cwd: workdir,
+      timeoutMs: BUILD_TIMEOUT_MS,
+      maxOutputBytes: MAX_OUTPUT_BYTES,
+    });
+    build = {
+      ok: !b.timedOut && b.exitCode === 0,
+      stdout: b.stdout,
+      stderr: b.stderr,
+      timedOut: b.timedOut,
+      signal: b.signal,
+    };
+    if (!build.ok) {
+      return { build, tests: [], passed: 0, failed: 0, total: 0 };
+    }
+  }
+
+  const slug = testName ? slugifyTestName(testName) : undefined;
+  const toRun = slug ? assignment.tests.filter((t) => slugifyTestName(t.name) === slug) : assignment.tests;
+
+  const tests: TestResult[] = [];
+  for (const test of toRun) {
+    const r = await spawnCommand(assignment.run, {
+      cwd: workdir,
+      input: test.input,
+      timeoutMs: RUN_TIMEOUT_MS,
+      maxOutputBytes: MAX_OUTPUT_BYTES,
+    });
+    const got = r.stdout.trim();
+    const passed = !r.timedOut && r.exitCode === 0 && got === test.expected;
+    tests.push({
+      name: test.name,
+      input: test.input,
+      expected: test.expected,
+      got,
+      stderr: r.stderr,
+      exitCode: r.exitCode,
+      signal: r.signal,
+      timedOut: r.timedOut,
+      passed,
+    });
+  }
+
+  const passed = tests.filter((t) => t.passed).length;
+  return {
+    build,
+    tests,
+    passed,
+    failed: tests.length - passed,
+    total: tests.length,
+  };
+}
+
 export async function runAssignment(
   assignment: Assignment,
   code: string,
@@ -239,6 +324,17 @@ export async function runAssignment(
       ),
       "utf8",
     );
+
+    // Write each test's input to its own file (input-<test-name>.txt) so the
+    // agent can feed the program via a stdin redirect from that file name when
+    // it needs to, without ever constructing an echo/printf pipe.
+    for (const test of assignment.tests) {
+      fs.writeFileSync(
+        path.join(sandboxDir, `input-${slugifyTestName(test.name)}.txt`),
+        test.input,
+        "utf8",
+      );
+    }
 
     let build: BuildResult | null = null;
     if (assignment.build) {

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HintLab — a debugging tutor that never writes the fix</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <h1>HintLab</h1>
+      <p class="tagline">a debugging tutor that never writes the fix</p>
+    </header>
+
+    <main class="layout">
+      <!-- Left column: assignment + code + run -->
+      <section class="panel" aria-labelledby="assignment-heading">
+        <h2 id="assignment-heading">1 · Choose an assignment</h2>
+        <div class="assignment-meta">
+          <label for="assignment-select">Assignment</label>
+          <select id="assignment-select" autocomplete="off">
+            <option value="">Loading assignments…</option>
+          </select>
+          <span id="assignment-language" class="badge" hidden></span>
+        </div>
+        <p id="assignment-statement" class="statement"></p>
+
+        <h2>2 · Your code</h2>
+        <textarea
+          id="code"
+          spellcheck="false"
+          placeholder="Paste your program here…"
+          aria-label="Your code"
+        ></textarea>
+        <button id="run" type="button" class="primary">Run &amp; get hint</button>
+        <p id="form-error" class="error" role="alert" hidden></p>
+      </section>
+
+      <!-- Right column: test results, hints, live feed -->
+      <section class="panel" aria-labelledby="results-heading">
+        <h2 id="results-heading">Test results</h2>
+        <div id="test-results" class="test-results"></div>
+
+        <h2 id="hints-heading">Hints</h2>
+        <div id="hint-cards" class="hint-cards"></div>
+        <div id="hint-status" class="hint-status" aria-live="polite"></div>
+        <button id="next-hint" type="button" class="secondary" disabled>
+          Next hint
+        </button>
+
+        <h2 id="feed-heading">Tutor activity</h2>
+        <div id="feed" class="feed" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

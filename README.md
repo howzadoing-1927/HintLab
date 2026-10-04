@@ -6,8 +6,10 @@ sandbox, then a Cline‑SDK agent diagnoses the failure and delivers **tiered
 hints** (level 1 nudge → level 2 where to look → level 3 concept). It **never**
 writes or reveals the fix.
 
-This is **Step 02**: the HintLab tutor agent (built with `@cline/sdk`), wired
-into the Express server. There is no web UI yet.
+This is **Step 04**: the full web UI, plus the server-side fixes from the Step 02
+review — an explicit SSE event allow-list (no unguarded model output reaches the
+browser), friendly errors, a hardened `run_tests` tool that replaces the host
+`run_commands` shell, and a stricter allow-list/hint guard.
 
 ## Requirements
 
@@ -61,10 +63,26 @@ The server listens on `http://localhost:3000` by default. Override with `PORT`:
 PORT=3200 npm start
 ```
 
+The web UI is served at `http://localhost:3200/` (plain HTML/CSS/vanilla JS, no
+build step).
+
+### Using the UI
+
+1. Pick an assignment from the drop-down (it shows the statement and language and
+   preloads the buggy starter code into the editor).
+2. Edit the code, then press **Run & get hint**.
+3. The test-results table appears (name, input, expected, got, PASS/FAIL with
+   colour, plus timeout/signal/build errors), and the tutor's activity streams in
+   live on the right.
+4. Hint cards appear as "Level 1: nudge" → "Level 2: where to look" → "Level 3:
+   the concept". Press **Next hint** for the next level (it disables while the
+   tutor is busy). Starting a new run resets everything.
+
 ### Endpoints
 
 | Method | Path                          | Description                                                      |
 | ------ | ----------------------------- | ---------------------------------------------------------------- |
+| GET    | `/`                           | Web UI (static `web/`)                                           |
 | GET    | `/api/health`                 | Liveness check                                                   |
 | GET    | `/api/assignments`            | List assignments (id, language, statement, starter code)         |
 | POST   | `/api/session`                | Run a submission + start the agent. Body `{ assignmentId, code? }` |
@@ -86,41 +104,53 @@ curl -s -X POST localhost:3200/api/session \
 
 ### SSE event types
 
-The stream maps the SDK's `cline.subscribe` events (filtered by `sessionId`) to
-these named events:
+The stream only ever forwards a small **allow-list** of event types, each with a
+sanitised payload that can never contain the model's own text, reasoning, or raw
+SDK/stack-trace messages. Unguarded events (`agent_text`, `reasoning`, and tool
+inputs/outputs that carry model free text) are dropped at the server boundary and
+are never sent — including to late joiners via the replay buffer.
 
-| Event            | Meaning                                                       |
+| Event            | What reaches the client                                       |
 | ---------------- | ------------------------------------------------------------- |
-| `test_results`   | The runner's test results (inputs / expected / got)           |
-| `agent_text`     | Assistant text (`content_start`/`content_end`, type `text`)   |
-| `reasoning`      | Model reasoning summaries (if the provider emits them)        |
-| `tool_call`      | A tool call started (name + input)                            |
-| `tool_result`    | A tool call finished (name + output/error)                    |
-| `approval`       | A `run_commands` approval decision (allowed/denied + commands + reason) |
-| `hint`           | An accepted hint delivered through `give_hint`                |
-| `hint_rejected`  | A hint rejected by the guard (wrong level or code detected)   |
-| `status`         | Session status / iteration / usage / notice updates           |
-| `error`          | An agent error (often recoverable)                            |
-| `done`           | The agent finished a turn                                     |
+| `test_results`   | Test results (name, input, expected, got, pass/fail, signal/timedOut, build error) — never `sandboxDir` |
+| `tool_call`      | Only `run_commands` (command), `read_files` (file name), or `run_tests` (test name) |
+| `tool_result`    | For `run_commands` a short trimmed output; for `run_tests` the pass/fail summary |
+| `approval`       | `allowed`/`denied` + the command (or tool name)               |
+| `hint`           | An accepted, guarded hint (`level`, `tag`, `text`)            |
+| `hint_status` / `hint_rejected` | Only a reason category (e.g. `wrong level`, `contained code`) — never the rejected text |
+| `status`         | Session status string only (`running`/`idle`/`complete`/`error`) |
+| `error`          | A short, friendly human line (no stack traces / raw SDK messages) |
+| `done`           | The agent finished a turn (reason only)                       |
 
-A `: ping` heartbeat comment is sent every ~15s; buffered events are replayed
-to late-joining clients.
+A `: ping` heartbeat comment is sent every ~15s; buffered events are replayed to
+late-joining clients through the same filter.
 
 ## Safety model
 
 - The agent runs with `enableSpawnAgent: false` and `enableAgentTeams: false`.
 - All file-editing/network tools are disabled (`editor`, `apply_patch`,
   `fetch_web_content`, `skills`, `ask_question`, `submit_and_exit` →
-  `{ enabled: false }`). `read_files` and `search_codebase` are auto-approved.
-- `run_commands` is `autoApprove: false` and gated by a strict regex allow-list
-  in `capabilities.requestToolApproval` (see `src/allowlist.ts`). Only the
-  assignment's own build/run/read commands are allowed; `;`, `&&`, `||`,
-  backticks, `$(`, extra pipes and other redirects are rejected. Every approval
-  decision is logged as an `approval` event.
+  `{ enabled: false }`). `read_files`, `search_codebase`, `give_hint`, and
+  `run_tests` are auto-approved.
+- The built-in `run_commands` tool is **disabled** (`enabled: false`). Instead the
+  agent gets a custom `run_tests` tool that runs the student's code through the
+  hardened server runner (process-group kill, per-test timeouts, minimal env with
+  `HOME` set to the sandbox dir, signal reporting) — so student code run by the
+  agent can never read server env vars or the credentials in `~/.cline`.
+- `requestToolApproval` still denies everything that is not explicitly allowed, so
+  any command attempt is blocked and shown as an approval-denied line. The strict
+  regex allow-list in `src/allowlist.ts` is retained and unit-tested; it allows
+  only `python3 main.py`, the exact `gcc` build command, `./main`, a stdin
+  redirect from an `input-*.txt` file, and `cat` of `main.py`/`main.c`/`tests.json`
+  or an `input-*.txt` file. Any `$` (variable/command expansion) and any pipe
+  (`echo … | program`) are denied. Each test's input is written to its own
+  `input-<test-name>.txt` file in the workdir.
 - Hints can only be delivered through `give_hint`, and every hint is checked by
   `src/hintGuard.ts` before it is stored/sent. A hint containing a fenced code
-  block, long inline code, code-like lines, or a rewritten solution is rejected
-  (the model gets an error and rephrases without code).
+  block, inline code, a one-line code expression (indexing/slicing, comparison or
+  arithmetic between identifiers, casts, calls, semicolons), or a rewritten
+  solution is rejected — while plain prose like "for x in the list" or "if the
+  list is empty" still passes.
 
 ## Run the checks
 
@@ -128,6 +158,7 @@ to late-joining clients.
 npm run typecheck     # tsc --noEmit
 npm run test:runner   # sandboxed runner against the 3 buggy programs
 npm run check:agent   # end-to-end, REAL model call (starts a server on :3200)
+npm run check:web     # web UI + SSE contract (starts a server on :3200, stops by PID)
 ```
 
 `test:runner` runs the sandboxed runner against all three buggy starter programs
@@ -135,14 +166,24 @@ and asserts the exact expected pass/fail of every test, plus a correct solution
 for each assignment, an infinite-loop program (must time out), and a C program
 with a compile error (must report a build failure).
 
-`check:agent` unit-tests the allow-list (including injection attempts like
-`python3 main.py; rm -rf ~` and `cat /etc/passwd`) and the hint guard, then
-starts the server on `PORT=3200`, posts a `sum-of-list` session, reads the SSE
-stream, and requests hints level 2 and 3. It asserts exactly one accepted hint
-per level, that no hint contains code, that no edit/write tool was executed, and
-that any denied command was not run. It prints the hints verbatim, the distinct
-SSE event types, and the approval decisions, and exits non-zero on failure
-(overall timeout 8 minutes). It leaves no server running.
+`check:agent` unit-tests the allow-list (including `$`-expansion and pipe
+injection attempts like `echo $HOME | python3 main.py`) and the hint guard (new
+one-line code expressions are rejected; prose like "for x in the list" passes),
+then starts the server on `PORT=3200`, posts a `sum-of-list` session, reads the
+SSE stream, and requests hints level 2 and 3. It asserts exactly one accepted hint
+per level, that no hint contains code, that **no `agent_text`/`reasoning` and no
+rejected hint text arrive over SSE**, that `run_commands` was never executed (and
+never approved), that `run_tests` was used (or tests were otherwise reported), and
+that no edit/write tool ran. It prints the hints verbatim, the distinct SSE event
+types, and the approval decisions, and exits non-zero on failure (overall timeout
+8 minutes). It leaves no server running.
+
+`check:web` starts the server on `PORT=3200`, fetches `/` (asserting the page
+loads with the app title and that `/app.js` and `/style.css` return 200), fetches
+`/api/assignments`, starts one real session on `is-palindrome` (or
+`average-marks`), reads the SSE stream until the level-1 hint (or a timeout), and
+asserts the event types contain no `agent_text`/`reasoning`. It prints the event
+types seen and the hint, then stops the server by PID. It leaves no server running.
 
 ## Typecheck / build
 

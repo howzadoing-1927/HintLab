@@ -13,7 +13,8 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test:runner": "tsx scripts/check-runner.ts",
-    "check:agent": "tsx scripts/check-agent.ts"
+    "check:agent": "tsx scripts/check-agent.ts",
+    "check:web": "tsx scripts/check-web.ts"
   },
   "dependencies": {
     "@cline/sdk": "^0.0.90",

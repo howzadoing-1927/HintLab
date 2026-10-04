@@ -2,9 +2,11 @@ import path from "node:path";
 import { ClineCore, createTool } from "@cline/sdk";
 import type { AgentTool } from "@cline/sdk";
 import { z } from "zod";
-import { allowCommands, extractCommands } from "./allowlist";
-import { HINTLAB_MODEL_ID, HINTLAB_PROVIDER_ID } from "./config";
-import { checkHint } from "./hintGuard";
+import { extractCommands } from "./allowlist";
+import { loadAssignment } from "./assignments";
+import { AGENT_TURN_TIMEOUT_MS, HINTLAB_MODEL_ID, HINTLAB_PROVIDER_ID } from "./config";
+import { categorizeHintReason, checkHint } from "./hintGuard";
+import { runTestsInWorkdir } from "./runner";
 import {
   emitEvent,
   getSession,
@@ -21,8 +23,8 @@ const SYSTEM_PROMPT = [
   "You are HintLab, a programming tutor that helps a student debug their lab assignment.",
   "",
   "Diagnose why the student's program fails its tests, then help the student figure it out",
-  "on their own. You may read files (read_files, search_codebase) and run allow-listed shell",
-  "commands (run_commands) to inspect and test the program.",
+  "on their own. You may read files (read_files, search_codebase) and re-run the student's",
+  "tests with the run_tests tool.",
   "",
   "Hard rules:",
   "- NEVER write, edit, or show corrected code — not in tool calls, not in your text.",
@@ -33,9 +35,8 @@ const SYSTEM_PROMPT = [
   "- give_hint levels: 1 = a conceptual nudge; 2 = point to the area or line of the bug;",
   "  3 = a near-explicit explanation of the bug and the concept. No level may include code.",
   "- After calling give_hint, finish your turn with a brief, code-free message.",
-  "- run_commands already executes with the assignment workdir as its current directory, so",
-  "  use RELATIVE commands only (python3 main.py, ./main, cat main.py, echo \"...\" | python3",
-  "  main.py). Do NOT use `cd`, absolute paths, or shell separators like `;`/`&&`.",
+  "- You do not have a shell command tool. To execute the student's program, call run_tests",
+  "  (optionally with a single test name). It runs safely inside the assignment workdir.",
 ].join("\n");
 
 const GIVE_HINT_DESCRIPTION = [
@@ -88,7 +89,11 @@ const giveHintTool = createTool({
     const guard = checkHint(input.text);
     if (!guard.ok) {
       if (session) {
-        emitEvent(session, "hint_rejected", { level: input.level, reason: guard.reason, text: input.text });
+        // Never surface the rejected text — only a fixed reason category.
+        emitEvent(session, "hint_rejected", {
+          level: input.level,
+          reason: categorizeHintReason(guard.reason),
+        });
       }
       throw new Error(
         `HintLab rejected this hint: ${guard.reason}. Rephrase the hint in plain prose with no code, ` +
@@ -109,12 +114,40 @@ const giveHintTool = createTool({
   },
 });
 
+const RUN_TESTS_DESCRIPTION = [
+  "Run the student's program against the assignment's test cases, inside its sandbox.",
+  "Optionally pass a single test name to run only that test.",
+  "Returns per-test input, expected, got, stderr, signal and pass/fail.",
+  "Safe: process-group kill, per-test timeouts, and a minimal environment.",
+].join(" ");
+
+/**
+ * The hardened test runner exposed to the agent. It replaces the SDK's built-in
+ * run_commands (which is disabled) so that student code run by the agent goes
+ * through the server's own runner — process-group kill, timeouts, and a minimal
+ * env with HOME set to the sandbox dir. Student code therefore can never read
+ * the server's environment or the credentials in ~/.cline.
+ */
+const runTestsTool = createTool({
+  name: "run_tests",
+  description: RUN_TESTS_DESCRIPTION,
+  inputSchema: z.object({ testName: z.string().optional() }),
+  async execute(input, context) {
+    const session = context.sessionId ? getSession(context.sessionId) : undefined;
+    if (!session) {
+      return { error: "no active session" };
+    }
+    const assignment = loadAssignment(session.assignmentId);
+    return runTestsInWorkdir(assignment, session.workdir, input.testName);
+  },
+});
+
 
 function toolPolicies() {
   return {
     read_files: { autoApprove: true },
     search_codebase: { autoApprove: true },
-    run_commands: { autoApprove: false },
+    run_commands: { enabled: false },
     editor: { enabled: false },
     apply_patch: { enabled: false },
     fetch_web_content: { enabled: false },
@@ -122,11 +155,15 @@ function toolPolicies() {
     ask_question: { enabled: false },
     submit_and_exit: { enabled: false },
     give_hint: { autoApprove: true },
+    run_tests: { autoApprove: true },
   };
 }
 
 function capabilities() {
   return {
+    // Every tool that is not explicitly auto-approved is denied. run_commands is
+    // disabled at the policy level (and would be denied here as defence-in-depth),
+    // so a command attempt is still blocked and shown as an approval-denied line.
     requestToolApproval: async (req: {
       sessionId: string;
       toolName: string;
@@ -135,34 +172,21 @@ function capabilities() {
     }) => {
       const session = getSession(req.sessionId);
       const commands = extractCommands(req.input);
+      const reason =
+        req.toolName === "run_commands"
+          ? "Command blocked by allow-list"
+          : `Tool "${req.toolName}" is not allowed in HintLab`;
 
-      if (req.toolName !== "run_commands") {
-        const reason = `tool "${req.toolName}" requires approval and is not allowed in HintLab`;
-        if (session) {
-          emitEvent(session, "approval", {
-            toolName: req.toolName,
-            toolCallId: req.toolCallId,
-            commands,
-            allowed: false,
-            reason,
-          });
-        }
-        return { approved: false, reason };
-      }
-
-      const decision = allowCommands(commands);
       if (session) {
         emitEvent(session, "approval", {
           toolName: req.toolName,
           toolCallId: req.toolCallId,
           commands,
-          allowed: decision.allowed,
-          reason: decision.reason,
+          allowed: false,
+          reason,
         });
       }
-      return decision.allowed
-        ? { approved: true }
-        : { approved: false, reason: decision.reason ?? "command not on the HintLab allow-list" };
+      return { approved: false, reason };
     },
   };
 }
@@ -182,17 +206,10 @@ function handleCoreEvent(e: {
     if (!ev) return;
     switch (ev.type) {
       case "content_start":
+        // Only tool starts are forwarded (and then filtered to the allow-list).
+        // Model text and reasoning are dropped here and never emitted.
         if (ev.contentType === "tool") {
           emitEvent(session, "tool_call", { toolName: ev.toolName, toolCallId: ev.toolCallId, input: ev.input });
-        } else if (ev.contentType === "text") {
-          emitEvent(session, "agent_text", { text: ev.text ?? "", phase: "start" });
-        } else if (ev.contentType === "reasoning") {
-          emitEvent(session, "reasoning", { text: ev.reasoning ?? "", redacted: ev.redacted });
-        }
-        break;
-      case "content_update":
-        if (ev.contentType === "tool") {
-          emitEvent(session, "tool_call", { toolName: ev.toolName, toolCallId: ev.toolCallId, update: ev.update });
         }
         break;
       case "content_end":
@@ -204,39 +221,14 @@ function handleCoreEvent(e: {
             error: ev.error,
             durationMs: ev.durationMs,
           });
-        } else if (ev.contentType === "text") {
-          emitEvent(session, "agent_text", { text: ev.text ?? "", phase: "end" });
-        } else if (ev.contentType === "reasoning") {
-          emitEvent(session, "reasoning", { text: ev.reasoning ?? "", redacted: ev.redacted, phase: "end" });
         }
         break;
-      case "iteration_start":
-        emitEvent(session, "status", { iteration: ev.iteration, phase: "iteration_start" });
-        break;
-      case "iteration_end":
-        emitEvent(session, "status", { iteration: ev.iteration, toolCallCount: ev.toolCallCount, phase: "iteration_end" });
-        break;
-      case "usage":
-        emitEvent(session, "status", {
-          usage: {
-            inputTokens: ev.inputTokens,
-            outputTokens: ev.outputTokens,
-            totalInputTokens: ev.totalInputTokens,
-            totalOutputTokens: ev.totalOutputTokens,
-          },
-        });
-        break;
-      case "notice":
-        emitEvent(session, "status", { noticeType: ev.noticeType, message: ev.message });
-        break;
       case "done":
-        emitEvent(session, "done", { reason: ev.reason, text: ev.text, iterations: ev.iterations });
+        emitEvent(session, "done", { reason: ev.reason });
         break;
       case "error":
         emitEvent(session, "error", {
           message: ev.error instanceof Error ? ev.error.message : String(ev.error),
-          recoverable: ev.recoverable,
-          iteration: ev.iteration,
         });
         break;
       default:
@@ -301,12 +293,10 @@ function buildFirstPrompt(session: Session, mainPath: string, testsPath: string)
     "The program was already run against the test cases. Results:",
     buildTestResultsText(session),
     "",
-    "Diagnose the root cause of the failure(s). Read the files and run allow-listed commands",
-    "to confirm your diagnosis (run_commands already runs inside the workdir, so use relative",
-    "commands: python3 main.py / echo \"...\" | python3 main.py / cat main.py / cat tests.json,",
-    "or for C the gcc build and ./main — never `cd` or absolute paths). Then call the give_hint",
-    "tool EXACTLY ONCE with level 1 (a conceptual nudge). Do not write or show corrected code,",
-    "and do not call give_hint more than once.",
+    "Diagnose the root cause of the failure(s). Read the files, then call the run_tests tool",
+    "(optionally with a single test name) to re-run the student's tests and confirm your",
+    "diagnosis. Then call the give_hint tool EXACTLY ONCE with level 1 (a conceptual nudge).",
+    "Do not write or show corrected code, and do not call give_hint more than once.",
   ].join("\n");
 }
 
@@ -317,6 +307,20 @@ function buildNextPrompt(_session: Session, level: number): string {
     "(1 = conceptual nudge, 2 = where to look, 3 = near-explicit concept).",
     `Call the give_hint tool EXACTLY ONCE with level ${level}. Do not write or show corrected code.`,
   ].join("\n");
+}
+
+/** Resolve/reject a promise within `ms`, with a friendly timeout message. */
+async function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(label)), ms);
+    timer.unref?.();
+  });
+  try {
+    return await Promise.race([p, timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 /** Run the first (level-1) agent turn in the background for a session. */
@@ -333,7 +337,7 @@ export async function startSession(sessionId: string): Promise<void> {
   setStatus(session, "running");
 
   try {
-    const result = await cline.start({
+    const startPromise = cline.start({
       interactive: true,
       prompt: buildFirstPrompt(session, mainPath, testsPath),
       config: {
@@ -351,11 +355,14 @@ export async function startSession(sessionId: string): Promise<void> {
         enableTools: true,
         enableSpawnAgent: false,
         enableAgentTeams: false,
-        extraTools: [giveHintTool as unknown as AgentTool],
+        extraTools: [giveHintTool as unknown as AgentTool, runTestsTool as unknown as AgentTool],
       },
       toolPolicies: toolPolicies(),
       capabilities: capabilities(),
     });
+    startPromise.catch(() => undefined); // swallow late settle after a timeout
+
+    const result = await withTimeout(startPromise, AGENT_TURN_TIMEOUT_MS, "Tutor timed out, try again");
 
     session.agentSessionId = result.sessionId;
     registerAgentSession(result.sessionId, session.id);
@@ -388,10 +395,12 @@ export async function nextHint(sessionId: string): Promise<{ level: number; stat
 
   const cline = await getCline();
   try {
-    const result = await cline.send({
+    const sendPromise = cline.send({
       sessionId: session.agentSessionId ?? session.id,
       prompt: buildNextPrompt(session, nextLevel),
     });
+    sendPromise.catch(() => undefined); // swallow late settle after a timeout
+    const result = await withTimeout(sendPromise, AGENT_TURN_TIMEOUT_MS, "Tutor timed out, try again");
     const finishReason = (result as { finishReason?: string } | undefined)?.finishReason;
     emitEvent(session, "status", { message: `level ${nextLevel} agent turn finished`, finishReason });
   } catch (err) {

@@ -5,6 +5,7 @@ import type { NextFunction, Request, Response } from "express";
 import { isSlug, listAssignments, loadAssignment } from "./assignments";
 import { nextHint, startSession } from "./agent";
 import { HEARTBEAT_MS } from "./config";
+import { sanitizeTestResults } from "./eventFilter";
 import { runAssignment } from "./runner";
 import {
   addClient,
@@ -93,7 +94,7 @@ export function createApp(): express.Express {
         setStatus(session, "error");
       });
 
-      res.json({ sessionId: session.id, testResults });
+      res.json({ sessionId: session.id, testResults: sanitizeTestResults(testResults) });
     } catch (err) {
       next(err);
     }

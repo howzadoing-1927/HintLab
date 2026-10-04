@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { randomUUID } from "node:crypto";
 import type { Response } from "express";
 import { SESSION_CLEANUP_INTERVAL_MS, SESSION_TTL_MS } from "./config";
+import { filterEvent } from "./eventFilter";
 import { writeSse } from "./sse";
 import type { Hint, RunResult, Session, SessionEvent } from "./types";
 
@@ -63,12 +64,18 @@ export function registerAgentSession(agentSessionId: string, hintlabSessionId: s
 
 /** Record an event and broadcast it to every connected SSE client. */
 export function emitEvent(session: Session, name: string, data: unknown): void {
+  // Raw events are stored verbatim for server-side logs/debugging.
   const event: SessionEvent = { name, data, at: Date.now() };
   session.events.push(event);
   session.lastActiveAt = Date.now();
+
+  // Only a sanitised allow-list of events ever reaches a client.
+  const clientEvent = filterEvent(name, data);
+  if (!clientEvent) return;
+
   for (const res of session.sseClients) {
     try {
-      writeSse(res, name, data);
+      writeSse(res, clientEvent.name, clientEvent.data);
     } catch {
       /* client already gone */
     }
@@ -88,10 +95,13 @@ export function addClient(session: Session, res: Response): void {
   session.sseClients.add(res);
   session.lastActiveAt = Date.now();
   // Replay is synchronous and single-threaded, so no event can be broadcast
-  // between the snapshot below and the live broadcast that follows it.
+  // between the snapshot below and the live broadcast that follows it. The
+  // same sanitisation allow-list applied to live events is applied here.
   for (const event of session.events) {
+    const clientEvent = filterEvent(event.name, event.data);
+    if (!clientEvent) continue;
     try {
-      writeSse(res, event.name, event.data);
+      writeSse(res, clientEvent.name, clientEvent.data);
     } catch {
       break;
     }

@@ -22,19 +22,33 @@ const CODE_LINE_PATTERNS: readonly RegExp[] = [
   /^\s*(def|class|import|from|return|print|printf|scanf|#include|else|elif)\b/,
   /^\s*(for|while|if)\s*\(/, // C control structures
   /^\s*(for|while|if|elif|else)\b[^:]*:$/, // Python control structures ending in ":"
-  /\bfor\s+\w+\s+in\s/, // Python for ... in
   CODE_FUNCTION_RE,
   /[A-Za-z_]\w*\s*(?:=|\+=|-=|\*=|\/=|%=)\s*[^=]/, // assignment
   /\b(?:int|float|double|char|void|long|short|unsigned)\s+\w+\s*[=;(\[]/, // C declaration
   /(?:\(float\)|\(int\)|\(double\)|\(char\))/, // C casts (e.g. (float) sum / n)
   /;\s*$/, // trailing semicolon (C statement)
   /->/, // C struct/member dereference
+  // --- identifiers combined with real code syntax ---
+  /[\w)\]]\s*\[[^\]\n]*\]/, // indexing / slicing: nums[i], s[::-1], s.lower()[::-1]
+  /\w\s*(?:==|!=|<=|>=)\s*\w/, // comparison operators between identifiers
+  /\w\s+[+\-*/%<>]\s+\w/, // spaced arithmetic/comparison (so "and/or" and
+  // hyphenated words like "off-by-one" are not flagged)
 ];
 
 function looksLikeCodeLine(line: string): boolean {
   const s = line.trim();
   if (!s) return false;
   return CODE_LINE_PATTERNS.some((re) => re.test(s));
+}
+
+/** Fixed categories used when a hint rejection is surfaced to a client. */
+export type HintRejectCategory = "wrong level" | "contained code" | "empty hint";
+
+/** Map any guard reason to a small, fixed category (never reveals hint text). */
+export function categorizeHintReason(reason?: string): HintRejectCategory {
+  if (reason === "wrong level") return "wrong level";
+  if (reason === "empty hint") return "empty hint";
+  return "contained code";
 }
 
 /**
@@ -58,7 +72,7 @@ export function checkHint(text: string): HintCheck {
       return { ok: false, reason: "inline code is longer than a short identifier/expression" };
     }
     // Reject inline code that is clearly an expression rather than a plain name.
-    if (/[(){}=<>;,]|->/.test(code)) {
+    if (/[(){}\[\]=<>;:,]|->/.test(code)) {
       return { ok: false, reason: "inline code looks like an expression" };
     }
   }

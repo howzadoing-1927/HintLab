@@ -25,27 +25,33 @@ function unitTestAllowList(): void {
   console.log("\n=== unit tests: run_commands allow-list ===");
 
   check(allowCommand("python3 main.py").allowed, "allow python3 main.py");
-  check(allowCommand("python3 main.py < input.txt").allowed, "allow python3 main.py < input.txt");
-  check(allowCommand("echo '1 2 3' | python3 main.py").allowed, "allow echo '1 2 3' | python3 main.py");
-  check(allowCommand("printf '2\\n10 20\\n' | python3 main.py").allowed, "allow printf '2\\n10 20\\n' | python3 main.py");
+  check(allowCommand("python3 main.py < input-basic.txt").allowed, "allow python3 main.py < input-basic.txt");
   check(allowCommand("gcc -Wall -O0 main.c -o main").allowed, "allow gcc -Wall -O0 main.c -o main");
   check(allowCommand("./main").allowed, "allow ./main");
-  check(allowCommand("./main < input.txt").allowed, "allow ./main < input.txt");
-  check(allowCommand("echo '2\\n10 20\\n' | ./main").allowed, "allow echo ... | ./main");
+  check(allowCommand("./main < input-even.txt").allowed, "allow ./main < input-even.txt");
   check(allowCommand("cat main.py").allowed, "allow cat main.py");
   check(allowCommand("cat main.c").allowed, "allow cat main.c");
   check(allowCommand("cat tests.json").allowed, "allow cat tests.json");
+  check(allowCommand("cat input-basic.txt").allowed, "allow cat input-basic.txt");
 
   check(!allowCommand("python3 main.py; rm -rf ~").allowed, "deny 'python3 main.py; rm -rf ~'");
   check(!allowCommand("cat /etc/passwd").allowed, "deny 'cat /etc/passwd'");
   check(!allowCommand("python3 main.py && rm -rf ~").allowed, "deny '&&' injection");
   check(!allowCommand("python3 main.py || rm -rf ~").allowed, "deny '||' injection");
   check(!allowCommand("python3 main.py | bash").allowed, "deny extra pipe");
+  check(!allowCommand("echo '1 2 3' | python3 main.py").allowed, "deny echo-pipe into program");
+  check(!allowCommand("printf '2\\n10 20\\n' | python3 main.py").allowed, "deny printf-pipe into program");
+  check(!allowCommand("echo '2\\n10 20\\n' | ./main").allowed, "deny echo-pipe into ./main");
+  check(!allowCommand("echo $HOME | python3 main.py").allowed, "deny echoing HOME variable into program");
+  check(!allowCommand("echo 42 | python3 main.py").allowed, "deny echoing a literal into program");
+  check(!allowCommand("python3 main.py < $input").allowed, "deny stdin redirect from a dollar-sign variable");
+  check(!allowCommand("python3 main.py < $(cat /etc/passwd)").allowed, "deny '$()' stdin redirect");
   check(!allowCommand("echo $(rm -rf ~) | python3 main.py").allowed, "deny '$()' injection");
   check(!allowCommand("echo `id` | python3 main.py").allowed, "deny backtick injection");
   check(!allowCommand("python3 main.py > /tmp/out").allowed, "deny output redirect");
   check(!allowCommand("python3 main.py < /etc/passwd").allowed, "deny absolute stdin redirect");
   check(!allowCommand("python3 main.py < ../secret").allowed, "deny parent-path stdin redirect");
+  check(!allowCommand("python3 main.py < input.txt").allowed, "deny stdin redirect not matching input-*.txt");
   check(!allowCommand("rm -rf /tmp/x").allowed, "deny 'rm -rf'");
   check(!allowCommand("gcc main.c -o main").allowed, "deny gcc without the exact build flags");
   check(!allowCommand("ls /").allowed, "deny 'ls /'");
@@ -83,6 +89,10 @@ function unitTestHintGuard(): void {
   check(checkHint("Think about which index your loop starts from.").ok, "pass: conceptual nudge");
   check(checkHint("Look at the line where the sum is accumulated.").ok, "pass: where-to-look");
   check(checkHint("The average is truncated because both operands are integers.").ok, "pass: concept (no code)");
+  check(checkHint("Consider what happens for each x in the list.").ok, "pass: prose 'for x in the list'");
+  check(checkHint("Check what should happen if the list is empty.").ok, "pass: prose 'if the list is empty'");
+  check(checkHint("Watch out for an off-by-one error in your loop.").ok, "pass: prose 'off-by-one'");
+  check(checkHint("Both of the operands are integers, so the division truncates.").ok, "pass: prose division mention");
 
   check(!checkHint("```python\nfor i in range(0, len(nums)):\n    total += nums[i]\n```").ok, "reject: fenced code block");
   check(!checkHint("The fix is `for i in range(0, len(nums)):`.").ok, "reject: inline code solution");
@@ -90,6 +100,15 @@ function unitTestHintGuard(): void {
   check(!checkHint("Use print(sum(nums)) instead.").ok, "reject: print(...) solution");
   check(!checkHint("for i in range(len(nums)):\ntotal += nums[i]").ok, "reject: multi-line source code");
   check(!checkHint("Just call sum() to add them up.").ok, "reject: function-call hint");
+
+  // New blocked cases: one-line code expressions embedded in prose.
+  check(!checkHint("Compare the cleaned string against its reverse, like t == t[::-1].").ok, "reject: equality vs reversed slice");
+  check(!checkHint("Your loop starts at range(1, len(nums)) instead of the beginning.").ok, "reject: range(1, len(...)) expression");
+  check(!checkHint("The average is truncated because of sum / n.").ok, "reject: sum / n arithmetic expression");
+  check(!checkHint("Inside the loop you should use nums[i].").ok, "reject: nums[i] indexing");
+  check(!checkHint("Try reversing it with s[::-1].").ok, "reject: s[::-1] slice");
+  check(!checkHint("Cast the division like (float) sum / n.").ok, "reject: (float) sum / n cast expression");
+  check(!checkHint("A one-line fix is avg = sum / n;").ok, "reject: assignment + semicolon expression");
 }
 
 async function waitUntil(fn: () => boolean, what: string, timeoutMs: number): Promise<void> {
@@ -109,7 +128,7 @@ interface SseRecord {
 // Independent code markers (beyond the guard) used to re-verify hints contain no code.
 function hasCodeMarker(text: string): boolean {
   if (text.includes("```")) return true;
-  return /(?:\bdef\s+\w+\s*\(|\bprint\s*\(|\bprintf\s*\(|\bscanf\s*\(|\brange\s*\(|\blen\s*\(|\bsum\s*\(|\bfor\s+\w+\s+in\s|\bwhile\s*\(|\bif\s*\(|\(float\)|\(int\)|;\s*$)/.test(
+  return /(?:\bdef\s+\w+\s*\(|\bprint\s*\(|\bprintf\s*\(|\bscanf\s*\(|\brange\s*\(|\blen\s*\(|\bsum\s*\(|\bwhile\s*\(|\bif\s*\(|\(float\)|\(int\)|;\s*$|\w\s*\[[^\]\n]*\]|\w\s*(?:==|!=|<=|>=)\s*\w|\w\s+[+\-*/%<>]\s+\w)/.test(
     text,
   );
 }
@@ -140,7 +159,7 @@ async function e2e(): Promise<void> {
 
   const events: SseRecord[] = [];
   const hints: Array<{ level: number; tag?: string; text: string }> = [];
-  const approvals: Array<{ toolName?: string; commands?: string[]; allowed?: boolean; reason?: string }> = [];
+  const approvals: Array<{ toolName?: string; command?: string; allowed?: boolean; reason?: string }> = [];
   const toolCalls: Array<{ toolName?: string }> = [];
   const eventTypes = new Set<string>();
   let lastStatus = "";
@@ -245,14 +264,29 @@ async function e2e(): Promise<void> {
     `no edit/write/network tool was executed (found ${writeCalls.map((t) => t.toolName).join(",") || "none"})`,
   );
 
-  for (const a of approvals) {
-    const cmds = Array.isArray(a.commands) ? a.commands : [];
-    const localDecision = allowCommands(cmds);
-    check(
-      localDecision.allowed === a.allowed,
-      `approval decision consistent for ${JSON.stringify(cmds)} (server said ${a.allowed})`,
-    );
-  }
+  // New SSE contract: no unguarded model output may ever reach the client.
+  check(!eventTypes.has("agent_text") && !eventTypes.has("reasoning"), "no agent_text or reasoning events over SSE");
+
+  const rejected = events.filter((e) => e.name === "hint_rejected");
+  check(
+    rejected.every((e) => {
+      const d = e.data as Record<string, unknown> | null;
+      return !(d && typeof d === "object" && "text" in d);
+    }),
+    `hint_rejected events carry only a reason category, never text (saw ${rejected.length})`,
+  );
+
+  const runCommandCalls = toolCalls.filter((t) => t.toolName === "run_commands");
+  check(runCommandCalls.length === 0, `run_commands was never executed (saw ${runCommandCalls.length})`);
+  check(
+    !approvals.some((a) => a.toolName === "run_commands" && a.allowed === true),
+    "no run_commands call was ever approved",
+  );
+  check(
+    toolCalls.some((t) => t.toolName === "run_tests") || eventTypes.has("test_results"),
+    "run_tests was used or the test results were otherwise reported",
+  );
+  check(approvals.every((a) => a.allowed !== true), "every approval request was denied (deny-all)");
 
   // --- report ---
   console.log("\n=== hints (verbatim) ===");
@@ -269,7 +303,7 @@ async function e2e(): Promise<void> {
     console.log("(none — the agent requested no command approvals during this run)");
   }
   for (const a of approvals) {
-    console.log(`${a.allowed ? "APPROVED" : "DENIED"}  ${JSON.stringify(a.commands)}${a.reason ? `  (${a.reason})` : ""}`);
+    console.log(`${a.allowed ? "APPROVED" : "DENIED"}  ${a.command ?? ""}${a.reason ? `  (${a.reason})` : ""}`);
   }
 }
 

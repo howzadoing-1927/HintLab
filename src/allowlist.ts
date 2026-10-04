@@ -23,8 +23,8 @@ export const DENY_SUBSTRINGS: readonly string[] = [
   "&&", // and-list
   "||", // or-list
   "`", // command substitution
-  "$(", // command substitution
-  "${", // parameter expansion
+  "$", // any dollar sign: variable or command expansion ($HOME, $(…), ${…})
+  "|", // any pipe — echo/printf piping into the program is disallowed entirely
   ">", // output redirection (writing files)
   "&", // backgrounding / single ampersand
   "\n", // literal newline = another command
@@ -40,17 +40,14 @@ export const DENY_SUBSTRINGS: readonly string[] = [
 export const ALLOWED_COMMANDS: readonly RegExp[] = [
   // --- Python: run the program ---
   /^python3 main\.py$/,
-  // stdin redirect from a simple file name (no slashes → cannot escape the workdir)
-  /^python3 main\.py < [A-Za-z0-9_.-]+$/,
-  // pipe literal input into the program (echo/printf only; no nested pipes/redirects)
-  /^(echo|printf) [^|<>]+ \| python3 main\.py$/,
+  // stdin redirect from a per-test input file in the workdir (no slashes)
+  /^python3 main\.py < input-[A-Za-z0-9_-]+\.txt$/,
   // --- C: build + run ---
   /^gcc -Wall -O0 main\.c -o main$/, // the exact tests.json build command
   /^\.\/main$/,
-  /^\.\/main < [A-Za-z0-9_.-]+$/,
-  /^(echo|printf) [^|<>]+ \| \.\/main$/,
+  /^\.\/main < input-[A-Za-z0-9_-]+\.txt$/,
   // --- Reads ---
-  /^cat (main\.py|main\.c|tests\.json)$/,
+  /^cat (main\.py|main\.c|tests\.json|input-[A-Za-z0-9_-]+\.txt)$/,
 ];
 
 /**
