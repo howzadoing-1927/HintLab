@@ -539,11 +539,22 @@ hintlab/
 
 ## 11. How this was built
 
-All application code was written by the **Cline CLI** from the prompts in
-`cline-proof/prompts/`, with the full session logs in `cline-proof/sessions/` (and in the
-Cline session history). The git commits follow the prompt steps (`00-plan`, `00b-write-plan`,
-`01-server-runner`, `02-agent`, `02c-runner-hardening`, `03-web-ui`, `03-web-ui.retry`,
-`03r-web-ui-resume`, `04-readme`, `05-readme-auth-fixes`).
+All application code was written by the **Cline CLI** (ClinePass, `cline-pass/deepseek-v4-pro`).
+The prompts were written by the team's AI assistant (hackbot), directed by team HintLab, and sent
+to Cline one step at a time.
+
+- **`cline-history/`**: Cline's own chat history for the whole sprint, complete and unedited:
+  11 build sessions (raw files plus HTML from `cline history export`), HintLab's own tutor runs
+  in a separate labelled folder, and checksums. `cline-history/INDEX.md` maps each session to its
+  step and git commit.
+- **`cline-proof/`**: our own notes alongside it: each prompt as sent, the CLI's JSON output,
+  timings, verify logs and tester reports.
+
+The git commits follow the steps (`00-plan`, `00b-write-plan`, `01-server-runner`, `02-agent`,
+`02c-runner-hardening`, `03-web-ui` (retry), `04-readme`, `05-readme-auth-fixes`). Step 06
+(tighter level 3 hints) was started but stopped at the ClinePass usage limit and was **not
+merged**; see `cline-proof/sessions/06-STATUS.md`. Level 3 hints can therefore name the
+methods to use.
 
 ## 12. Disclosure
 
