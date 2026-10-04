@@ -1,0 +1,80 @@
+diff --git a/src/agent.ts b/src/agent.ts
+index f289f74..a1ddad1 100644
+--- a/src/agent.ts
++++ b/src/agent.ts
+@@ -31,19 +31,48 @@ const SYSTEM_PROMPT = [
+   "- NEVER write, edit, or show corrected code — not in tool calls, not in your text.",
+   "  The file-editing tools are disabled for you; do not attempt them.",
+   "- Do NOT put code, code snippets, or a rewritten solution in any message or hint.",
++  "- Do NOT spell out the fix in words either. Naming the specific functions or methods to",
++  "  call, the variable to change, the type or cast to use, the operator to use, or the exact",
++  "  sequence of edits is a code answer in disguise and is not allowed.",
+   "- The ONLY way to help is through the give_hint tool. Call it exactly once per turn, at",
+   "  the level you were asked for.",
+-  "- give_hint levels: 1 = a conceptual nudge; 2 = point to the area or line of the bug;",
+-  "  3 = a near-explicit explanation of the bug and the concept. No level may include code.",
++  "- give_hint levels:",
++  "  1 = a conceptual nudge about what kind of mistake it is, without locating it.",
++  "  2 = point to the area or line and say what that part of the code currently does wrong,",
++  "      still without saying how to change it.",
++  "  3 = the most explicit level: explain the underlying concept in general terms and exactly",
++  "      why the student's current code produces the wrong output for the failing tests,",
++  "      referring to their actual inputs and outputs. Do NOT name the specific methods,",
++  "      functions, library calls, casts, types, operators, or keywords to use; do NOT",
++  "      describe the exact edit or its sequence; do NOT say \"change X to Y\" or \"first do A",
++  "      then B\". End by leaving the student to decide the concrete change themselves.",
++  "  No level may include code, a corrected line, or a rewritten solution in words.",
+   "- After calling give_hint, finish your turn with a brief, code-free message.",
+   "- You do not have a shell command tool. To execute the student's program, call run_tests",
+   "  (optionally with a single test name). It runs safely inside the assignment workdir.",
++  "",
++  "Level 3 example — the difference between explaining a concept and dictating the fix.",
++  "Consider a made-up assignment that is not in this repo: read a word and print how many",
++  "vowels it contains. The student's program counts only the lowercase vowels.",
++  "  GOOD (explains the concept, leaves the change to the student): \"Letter comparisons are",
++  "  case-sensitive: an uppercase vowel has a different value from its lowercase form, so a",
++  "  program that only recognizes the lowercase letters misses the uppercase ones and counts",
++  "  too low for a word like 'Apple'. What would make both forms of a letter look the same",
++  "  before your program decides whether it is a vowel?\"",
++  "  BAD (dictates the fix): \"Call the lowercase method on the word right after you read it,",
++  "  before the loop, so an uppercase letter becomes lowercase and matches your check. Make",
++  "  that change on the line where the word is read.\"",
+ ].join("\n");
+ 
+ const GIVE_HINT_DESCRIPTION = [
+   "Show the student exactly one hint at the requested level.",
+-  "level 1 = a conceptual nudge; level 2 = point to the area or line of the bug;",
+-  "level 3 = a near-explicit explanation of the bug and the underlying concept.",
++  "level 1 = a conceptual nudge about the kind of mistake, without locating it;",
++  "level 2 = point to the area or line and what it currently does wrong, not how to change it;",
++  "level 3 = the most explicit: explain the underlying concept in general terms and why the",
++  "student's current code produces the wrong output for the failing tests (using their actual",
++  "inputs and outputs), but do NOT name the specific methods, functions, library calls, casts,",
++  "types, operators, or keywords to use, do NOT describe the exact edit or its sequence, and",
++  "end by leaving the student to decide the concrete change.",
+   "Never include code or a corrected solution in the text. Use plain prose only.",
+   "An optional short `tag` (e.g. \"off-by-one\") is fine.",
+ ].join(" ");
+@@ -295,7 +324,8 @@ function buildFirstPrompt(session: Session, mainPath: string, testsPath: string)
+     "",
+     "Diagnose the root cause of the failure(s). Read the files, then call the run_tests tool",
+     "(optionally with a single test name) to re-run the student's tests and confirm your",
+-    "diagnosis. Then call the give_hint tool EXACTLY ONCE with level 1 (a conceptual nudge).",
++    "diagnosis. Then call the give_hint tool EXACTLY ONCE with level 1 (a conceptual nudge",
++    "about what kind of mistake it is, without locating it).",
+     "Do not write or show corrected code, and do not call give_hint more than once.",
+   ].join("\n");
+ }
+@@ -304,7 +334,11 @@ function buildNextPrompt(_session: Session, level: number): string {
+   return [
+     "The student is still stuck and asked for the next hint.",
+     `Give the next hint at level ${level}`,
+-    "(1 = conceptual nudge, 2 = where to look, 3 = near-explicit concept).",
++    "(1 = conceptual nudge, 2 = where to look, 3 = the underlying concept).",
++    "Remember the level rules: never write code or a corrected line, never name the specific",
++    "methods, functions, calls, casts, types, operators, or keywords to use, and never describe",
++    "the exact edit or its sequence. For level 3, explain the concept and why the student's code",
++    "fails the tests, then leave the concrete change to the student.",
+     `Call the give_hint tool EXACTLY ONCE with level ${level}. Do not write or show corrected code.`,
+   ].join("\n");
+ }
