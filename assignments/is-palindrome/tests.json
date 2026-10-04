@@ -1,0 +1,3 @@
+{"assignmentId":"is-palindrome","language":"python","statement":"Read one line. Print YES if it is a palindrome when you ignore case and spaces, otherwise NO.",
+ "run":"python3 main.py",
+ "tests":[{"name":"simple","input":"racecar\n","expected":"YES"},{"name":"not","input":"hello\n","expected":"NO"},{"name":"mixed-case","input":"Madam\n","expected":"YES"},{"name":"spaces","input":"never odd or even\n","expected":"YES"}]}

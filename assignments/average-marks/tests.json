@@ -1,0 +1,3 @@
+{"assignmentId":"average-marks","language":"c","statement":"First line n, second line n integer marks. Print the average with exactly 2 decimals.",
+ "build":"gcc -Wall -O0 main.c -o main","run":"./main",
+ "tests":[{"name":"even","input":"2\n10 20\n","expected":"15.00"},{"name":"fraction","input":"3\n1 2 2\n","expected":"1.67"},{"name":"half","input":"2\n3 4\n","expected":"3.50"}]}
